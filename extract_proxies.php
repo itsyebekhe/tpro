@@ -87,8 +87,14 @@ foreach ($usernames as $username) {
             $parsedUrl = parse_url($foundUrl);
 
             if ($parsedUrl && isset($parsedUrl['query'])) {
+                $queryString = $parsedUrl['query'];
+
+                // Decode HTML entities like & into & before parsing
+                $decodedQueryString = html_entity_decode($queryString);
+
                 $query = [];
-                parse_str($parsedUrl['query'], $query);
+                // Use the decoded query string
+                parse_str($decodedQueryString, $query);
 
                 // Check if server, port, and secret are present
                 if (isset($query['server']) && isset($query['port']) && isset($query['secret'])) {
@@ -106,13 +112,11 @@ foreach ($usernames as $username) {
                              'server' => $server,
                              'port' => $port,
                              'secret' => $secret,
-                             // You could potentially store the original foundUrl as well if needed
-                             // 'original_url' => $foundUrl
                          ];
                          echo " - Extracted: $tgUrl\n";
                     }
                 } else {
-                     echo " - Warning: Found URL looks like a proxy but missing required params: $foundUrl\n";
+                     echo " - Warning: Found URL looks like a proxy but missing required params (after decoding &): $foundUrl\n";
                 }
             } else {
                  echo " - Warning: Could not parse query from potential URL: $foundUrl\n";
