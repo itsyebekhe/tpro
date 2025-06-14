@@ -205,7 +205,7 @@ $htmlOutputContent = '<!DOCTYPE html>
         .proxy-item .proxy-link {
              flex-grow: 1; /* Allow the link part to take available space */
              margin-bottom: 10px; /* Space between link and buttons on stacked layout */
-             font-family: 'Courier New', Courier, monospace; /* Monospace for technical look */
+             font-family: \'Courier New\', Courier, monospace; /* Monospace for technical look */
              font-size: 0.9em;
              color: #0056b3;
              display: block; /* Make the span a block to apply margin-bottom */
@@ -277,7 +277,7 @@ $htmlOutputContent = '<!DOCTYPE html>
             background-color: #eee;
             padding: 2px 4px;
             border-radius: 4px;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: \'Courier New\', Courier, monospace;
             font-size: 0.9em;
         }
 
@@ -304,7 +304,7 @@ $htmlOutputContent = '<!DOCTYPE html>
             }
              .proxy-item a,
             .proxy-item button {
-                flex-grow: 0; /* Don't grow in the row layout */
+                flex-grow: 0; /* Don\'t grow in the row layout */
                 width: auto; /* Auto width based on content/padding */
             }
         }
@@ -391,7 +391,7 @@ $htmlOutputContent .= '
                             const originalText = this.textContent;
                             this.textContent = \'Copied!\';
                             this.style.backgroundColor = \'#28a745\'; // Green color for success feedback
-                             this.style.borderColor = '#218838';
+                             this.style.borderColor = \'#218838\';
                              // Revert text and color after a few seconds
                             setTimeout(() => {
                                 this.textContent = originalText;
@@ -405,7 +405,7 @@ $htmlOutputContent .= '
                     } else {
                         // Fallback for older browsers (less common now)
                         // This requires a textarea element and is more complex.
-                        // For simplicity, we'll just show an alert or log a message.
+                        // For simplicity, we\'ll just show an alert or log a message.
                         console.warn(\'Clipboard API not available.\');
                         alert(\'Please manually select and copy the link: \' + urlToCopy);
                     }
