@@ -128,30 +128,28 @@ foreach ($usernames as $username) {
 
 } // End of username loop
 
-// 6. Prepare data for output
+// 6. Prepare data for output (already done)
 $extractedProxyList = array_values($uniqueProxies); // Convert associative array back to indexed array for JSON
 
 echo "\nFinished processing all usernames.\n";
 echo "Total unique extracted proxies: " . count($extractedProxyList) . "\n";
 
 // 7. Generate and store JSON output
-if (count($extractedProxyList) > 0) {
-    $jsonOutputContent = json_encode($extractedProxyList, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES); // Pretty print and don't escape slashes
+// *** CHANGE START ***
+// Always create the file, even if the list is empty []
+$jsonOutputContent = json_encode($extractedProxyList, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-    if (file_put_contents($outputJsonFile, $jsonOutputContent) === false) {
-        echo "Error: Could not write extracted links to '$outputJsonFile'\n";
-    } else {
-        echo "Successfully wrote " . count($extractedProxyList) . " unique proxies to '$outputJsonFile'\n";
-    }
+if (file_put_contents($outputJsonFile, $jsonOutputContent) === false) {
+    echo "Error: Could not write extracted links to '$outputJsonFile'\n";
+    // Decide if this should cause the workflow to fail.
+    // For robustness, you might want to exit here: exit(1);
 } else {
-    echo "No unique proxies were found to save to JSON.\n";
-    // Optional: remove the output file if it exists and is empty
-    // if (file_exists($outputJsonFile)) {
-    //     unlink($outputJsonFile);
-    // }
+    echo "Successfully wrote " . count($extractedProxyList) . " unique proxies to '$outputJsonFile'\n";
 }
+// *** CHANGE END ***
 
-// 8. Generate and store HTML output
+
+// 8. Generate and store HTML output (This part is already fine)
 $htmlOutputContent = '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -175,7 +173,6 @@ $htmlOutputContent = '<!DOCTYPE html>
 
 if (count($extractedProxyList) > 0) {
     foreach ($extractedProxyList as $proxy) {
-        // Use the tg_url for the clickable link
         $htmlOutputContent .= '<li><a href="' . htmlspecialchars($proxy['tg_url']) . '">' . htmlspecialchars($proxy['tg_url']) . '</a></li>' . "\n";
     }
 } else {
@@ -191,9 +188,12 @@ $htmlOutputContent .= '
 
 if (file_put_contents($outputHtmlFile, $htmlOutputContent) === false) {
     echo "Error: Could not write HTML output to '$outputHtmlFile'\n";
+    // Decide if this should cause the workflow to fail.
+    // For robustness, you might want to exit here: exit(1);
 } else {
     echo "Successfully wrote HTML output to '$outputHtmlFile'\n";
 }
+
 
 echo "--- Script Finished ---\n";
 
