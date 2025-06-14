@@ -50,6 +50,7 @@ jobs:
           commit_message: Update extracted proxy list and HTML index
           branch: gh-pages
           create_branch: true # <-- Change this line from false to true
+          push_options: '--force-with-lease' # <-- Add this line
 
       # Optional: Upload the files as artifacts as well for easy download from the run summary
       # - name: Upload generated files as artifacts
