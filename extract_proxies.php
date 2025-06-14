@@ -58,7 +58,7 @@ foreach ($usernames as $username) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the transfer as a string
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Follow redirects
     curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Set a timeout in seconds
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; PHP Proxy Extractor/1.1; +https://github.com/your-username/your-repo)'); // Identify your script
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; PHP Proxy Extractor/1.2; +https://github.com/your-username/your-repo)'); // Identify your script
 
     $htmlContent = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -103,7 +103,6 @@ foreach ($usernames as $username) {
                     $secret = $query['secret'];
 
                     // Construct the canonical tg:// URL for uniqueness and connection
-                    // Ensure the secret is correctly formatted (might contain base64 chars)
                     $tgUrl = "tg://proxy?server={$server}&port={$port}&secret={$secret}";
 
                     // Store if unique
@@ -113,14 +112,10 @@ foreach ($usernames as $username) {
                              'server' => $server,
                              'port' => $port,
                              'secret' => $secret,
-                             // Optionally store source username
-                             // 'source' => $username
                          ];
                          echo " - Extracted: $tgUrl\n";
                     }
                 } else {
-                     // This warning is less frequent after html_entity_decode,
-                     // but could still happen for malformed links
                      echo " - Warning: Found URL looks like a proxy but missing required params: $foundUrl\n";
                 }
             } else {
@@ -149,7 +144,6 @@ $jsonOutputContent = json_encode($extractedProxyList, JSON_PRETTY_PRINT | JSON_U
 
 if (file_put_contents($outputJsonFile, $jsonOutputContent) === false) {
     echo "Error: Could not write extracted links to '$outputJsonFile'\n";
-    // For robustness in CI, you might want to exit if crucial files can't be written
     // exit(1);
 } else {
     echo "Successfully wrote " . count($extractedProxyList) . " unique proxies to '$outputJsonFile'\n";
@@ -164,14 +158,19 @@ $htmlOutputContent = '<!DOCTYPE html>
     <title>Telegram Proxy List</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: \'Roboto\', sans-serif;
+            font-family: \'Roboto\', sans-serif; /* Default font */
             margin: 0;
             padding: 20px;
             background-color: #f4f7f6;
             color: #333;
+        }
+         /* Apply Vazirmatn for Persian text */
+        [dir="rtl"] {
+            font-family: \'Vazirmatn\', sans-serif;
+            text-align: right;
         }
         .container {
             max-width: 800px;
@@ -265,8 +264,12 @@ $htmlOutputContent = '<!DOCTYPE html>
         .instructions p, .instructions ul {
             margin-bottom: 15px;
         }
-        .instructions ul {
+        .instructions ul, .instructions ol { /* Apply padding to ol as well */
             padding-left: 20px;
+        }
+         [dir="rtl"].instructions ul, [dir="rtl"].instructions ol { /* Adjust padding for RTL */
+            padding-left: 0;
+            padding-right: 20px;
         }
         .instructions li {
             margin-bottom: 8px;
@@ -280,6 +283,10 @@ $htmlOutputContent = '<!DOCTYPE html>
             font-family: \'Courier New\', Courier, monospace;
             font-size: 0.9em;
         }
+         .instructions span[style] { /* Style the colored spans in instructions */
+             display: inline-block; /* Allows padding */
+             white-space: nowrap; /* Keep text together */
+         }
 
         .footer {
             text-align: center;
@@ -287,6 +294,12 @@ $htmlOutputContent = '<!DOCTYPE html>
             font-size: 0.9em;
             color: #777;
         }
+        hr {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 30px 0;
+        }
+
 
         /* Responsive adjustments */
         @media (min-width: 600px) {
@@ -297,6 +310,10 @@ $htmlOutputContent = '<!DOCTYPE html>
             .proxy-item .proxy-link {
                  margin-bottom: 0; /* Remove bottom margin when in a row */
                  margin-right: 15px; /* Add space between link and buttons */
+            }
+             [dir="rtl"] .proxy-item .proxy-link {
+                 margin-right: 0; /* Remove right margin for RTL */
+                 margin-left: 15px; /* Add left margin for RTL */
             }
             .proxy-item .proxy-actions {
                  width: auto; /* Auto width when in a row */
@@ -321,7 +338,6 @@ $htmlOutputContent = '<!DOCTYPE html>
 
 if (count($extractedProxyList) > 0) {
     foreach ($extractedProxyList as $proxy) {
-        // Use the tg_url for the clickable link and data attribute
         $tgUrl = htmlspecialchars($proxy['tg_url']); // Sanitize URL for HTML output
         $htmlOutputContent .= '
             <li>
@@ -370,9 +386,38 @@ $htmlOutputContent .= '
              <p><strong>Note:</strong> Proxy availability can change. If a proxy doesn\'t work, try another from the list. This list is updated automatically.</p>
         </div>
 
+        <hr> <!-- Horizontal rule to separate English and Persian instructions -->
+
+        <div class="instructions" dir="rtl"> <!-- Added dir="rtl" for Persian section -->
+            <h2>راهنمای اتصال</h2>
+            <p>پراکسی‌های MTProto تلگرام به عبور از سانسور و محدودیت‌ها کمک می‌کنند. در اینجا نحوه استفاده از لینک‌ها آمده است:</p>
+            <h3>روش ۱: لینک مستقیم (توصیه شده)</h3>
+            <ol>
+                <li>مطمئن شوید برنامه رسمی تلگرام روی دستگاه شما (موبایل یا دسکتاپ) نصب است.</li>
+                <li>روی دکمه "<span style="color:white; background-color:#28a745; padding: 2px 5px; border-radius: 3px; unicode-bidi: embed;">اتصال</span>" کنار لینک پراکسی کلیک کنید. <span style="unicode-bidi: embed;">(Connect)</span></li>
+                <li>اگر تلگرام به درستی نصب و پیکربندی شده باشد، باز شده و از شما می‌خواهد که پراکسی را اضافه کنید.</li>
+                <li>اضافه کردن پراکسی را در برنامه تلگرام تایید کنید.</li>
+            </ol>
+             <h3>روش ۲: کپی کردن و افزودن دستی</h3>
+             <p>اگر کلیک روی لینک کار نکرد (مثلاً در برخی مرورگرهای دسکتاپ، یا اگر تنظیم دستی را ترجیح می‌دهید):</p>
+             <ol>
+                <li>روی دکمه "<span style="color:white; background-color:#007bff; padding: 2px 5px; border-radius: 3px; unicode-bidi: embed;">کپی</span>" کنار لینک پراکسی کلیک کنید. لینک در کلیپ‌بورد شما کپی خواهد شد. <span style="unicode-bidi: embed;">(Copy)</span></li>
+                <li>برنامه تلگرام را باز کنید.</li>
+                <li>به تنظیمات (⚙️) بروید.</li>
+                <li>به بخش داده و ذخیره‌سازی (Data and Storage) بروید.</li>
+                <li>پایین صفحه به تنظیمات پراکسی (Proxy Settings) بروید.</li>
+                <li>روی "افزودن پراکسی" (Add Proxy) ضربه بزنید.</li>
+                <li>نوع "MTProto" را انتخاب کنید.</li>
+                <li>باید گزینه‌ای مانند "استفاده از لینک tg://" را ببینید (این ممکن است بسته به نسخه برنامه/سیستم عامل کمی متفاوت باشد). لینک کپی شده را در آنجا بچسبانید. همچنین، اگر برنامه اجازه می‌دهد، می‌توانید سرور، پورت و secret را به صورت دستی وارد کنید.</li>
+                <li>پراکسی را ذخیره کنید.</li>
+             </ol>
+             <p><strong>توجه:</strong> دسترسی به پراکسی ممکن است تغییر کند. اگر یک پراکسی کار نکرد، پراکسی دیگری را از لیست امتحان کنید. این لیست به صورت خودکار به‌روز می‌شود.</p>
+        </div>
+
+
         <div class="footer">
-            <p>Last updated: ' . date('Y-m-d H:i:s') . ' UTC</p>
-            <p>Generated automatically by <a href="https://github.com/stefanzweifel/git-auto-commit-action" target="_blank">git-auto-commit-action</a> workflow.</p>
+            <p>آخرین به‌روزرسانی: ' . date('Y-m-d H:i:s') . ' UTC</p>
+            <p>تولید خودکار توسط گردش کار <a href="https://github.com/stefanzweifel/git-auto-commit-action" target="_blank">git-auto-commit-action</a>.</p>
         </div>
     </div>
 
@@ -404,8 +449,6 @@ $htmlOutputContent .= '
                         });
                     } else {
                         // Fallback for older browsers (less common now)
-                        // This requires a textarea element and is more complex.
-                        // For simplicity, we\'ll just show an alert or log a message.
                         console.warn(\'Clipboard API not available.\');
                         alert(\'Please manually select and copy the link: \' + urlToCopy);
                     }
@@ -419,7 +462,7 @@ $htmlOutputContent .= '
 
 if (file_put_contents($outputHtmlFile, $htmlOutputContent) === false) {
     echo "Error: Could not write HTML output to '$outputHtmlFile'\n";
-    // exit(1); // Consider exiting if file writing fails
+    // exit(1);
 } else {
     echo "Successfully wrote HTML output to '$outputHtmlFile'\n";
 }
