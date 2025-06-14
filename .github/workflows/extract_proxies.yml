@@ -1,4 +1,4 @@
-name: Extract Telegram Proxies
+name: Extract Telegram Proxies and Update Repo
 
 on:
   # Trigger the workflow on push events to the main branch
@@ -14,14 +14,21 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# Grant permissions for the GITHUB_TOKEN to write contents
+# This is required by the git-auto-commit-action to push changes
+permissions:
+  contents: write
+
 jobs:
   extract_proxies:
     runs-on: ubuntu-latest # Use the latest Ubuntu runner
 
     steps:
       # Step 1: Checkout the repository code
+      # We checkout the default branch (main/master) to access the script and input file
       - name: Checkout code
         uses: actions/checkout@v4
+        # The git-auto-commit-action will handle checking out/committing to the target branch
 
       # Step 2: Set up PHP with the cURL extension
       - name: Setup PHP
@@ -29,20 +36,36 @@ jobs:
         with:
           php-version: '8.x' # Use a recent PHP version
           extensions: curl   # Enable the cURL extension
-          # Optionally add other extensions or tools if needed, e.g., composer: true
 
       # Step 3: Run the PHP script
+      # This script generates index.html and extracted_proxies.json in the current directory
       - name: Run PHP script to extract proxies
-        run: |
-          php extract_proxies.php
+        run: php extract_proxies.php
 
-      # Step 4: Upload the output file as a workflow artifact
-      # This makes the file accessible from the workflow run summary page
-      - name: Upload extracted proxy links
-        uses: actions/upload-artifact@v4
+      # Step 4: Commit and push the generated files back to the repository
+      # We use a dedicated action for this to handle git operations correctly within the workflow
+      - name: Commit generated files
+        uses: stefanzweifel/git-auto-commit-action@v5 # Use a robust action for auto-committing
         with:
-          name: extracted-proxy-links # The name of the artifact
-          path: extracted_proxy_links.txt # The file created by your PHP script
-          # Optional: retain-days: 7 # How long to keep the artifact (default 90 days)
-          # Only upload if the file exists (important if the script might not create it)
-          if-no-files-found: ignore # Don't fail the step if the file isn't found
+          # Specify the files to add and commit
+          # Ensure these match the output filenames in your PHP script
+          file_pattern: index.html extracted_proxies.json
+          # Set a meaningful commit message
+          commit_message: Update extracted proxy list and HTML index
+          # Specify the branch to commit to
+          # This is often 'gh-pages' for static website hosting
+          branch: gh-pages # <-- !!! IMPORTANT: Change this to your target branch !!!
+          # Optional: Configure commit user/email (defaults to GitHub Actions bot)
+          # commit_user_name: GitHub Actions Bot
+          # commit_user_email: actions@github.com
+          # commit_author: GitHub Actions Bot <actions@github.com>
+
+      # Optional: Upload the files as artifacts as well for easy download from the run summary
+      # - name: Upload generated files as artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: generated-proxy-outputs
+      #     path: |
+      #       index.html
+      #       extracted_proxies.json
+      #     if-no-files-found: ignore # Don't fail if files weren't created (e.g., script failed)
