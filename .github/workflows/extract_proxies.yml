@@ -1,0 +1,48 @@
+name: Extract Telegram Proxies
+
+on:
+  # Trigger the workflow on push events to the main branch
+  push:
+    branches: [ main, master ] # Adjust branch names if needed
+
+  # Trigger the workflow on a schedule (e.g., daily at 00:00 UTC)
+  schedule:
+    # Use cron syntax: https://crontab.guru/
+    # This runs at 00:00 UTC every day
+    - cron: '0 0 * * *'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  extract_proxies:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up PHP with the cURL extension
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.x' # Use a recent PHP version
+          extensions: curl   # Enable the cURL extension
+          # Optionally add other extensions or tools if needed, e.g., composer: true
+
+      # Step 3: Run the PHP script
+      - name: Run PHP script to extract proxies
+        run: |
+          php extract_proxies.php
+
+      # Step 4: Upload the output file as a workflow artifact
+      # This makes the file accessible from the workflow run summary page
+      - name: Upload extracted proxy links
+        uses: actions/upload-artifact@v4
+        with:
+          name: extracted-proxy-links # The name of the artifact
+          path: extracted_proxy_links.txt # The file created by your PHP script
+          # Optional: retain-days: 7 # How long to keep the artifact (default 90 days)
+          # Only upload if the file exists (important if the script might not create it)
+          if-no-files-found: ignore # Don't fail the step if the file isn't found
