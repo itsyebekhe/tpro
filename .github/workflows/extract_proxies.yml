@@ -43,22 +43,13 @@ jobs:
         run: php extract_proxies.php
 
       # Step 4: Commit and push the generated files back to the repository
-      # We use a dedicated action for this to handle git operations correctly within the workflow
       - name: Commit generated files
-        uses: stefanzweifel/git-auto-commit-action@v5 # Use a robust action for auto-committing
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          # Specify the files to add and commit
-          # Ensure these match the output filenames in your PHP script
           file_pattern: index.html extracted_proxies.json
-          # Set a meaningful commit message
           commit_message: Update extracted proxy list and HTML index
-          # Specify the branch to commit to
-          # This is often 'gh-pages' for static website hosting
-          branch: gh-pages # <-- !!! IMPORTANT: Change this to your target branch !!!
-          # Optional: Configure commit user/email (defaults to GitHub Actions bot)
-          # commit_user_name: GitHub Actions Bot
-          # commit_user_email: actions@github.com
-          # commit_author: GitHub Actions Bot <actions@github.com>
+          branch: gh-pages
+          create_branch: true # <-- Change this line from false to true
 
       # Optional: Upload the files as artifacts as well for easy download from the run summary
       # - name: Upload generated files as artifacts
