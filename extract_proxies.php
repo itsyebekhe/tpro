@@ -90,7 +90,21 @@ foreach ($usernames as $username) {
                 $queryString = $parsedUrl['query'];
 
                 // Decode HTML entities like & into & before parsing
-                $decodedQueryString = html_entity_decode($queryString);
+                // *** OLD: $decodedQueryString = html_entity_decode($queryString);
+
+                // *** NEW: Repeatedly decode & to &
+                $decodedQueryString = $queryString;
+                $oldQueryString = '';
+                while ($decodedQueryString !== $oldQueryString) {
+                    $oldQueryString = $decodedQueryString;
+                    // Replace & with &
+                    $decodedQueryString = str_replace('&', '&', $decodedQueryString);
+                    // Optionally, you could run html_entity_decode here too for robustness
+                    // $decodedQueryString = html_entity_decode($decodedQueryString);
+                }
+                // Ensure standard HTML entities like > < etc. are also decoded once
+                $decodedQueryString = html_entity_decode($decodedQueryString);
+
 
                 $query = [];
                 // Use the decoded query string
