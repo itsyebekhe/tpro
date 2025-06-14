@@ -2,7 +2,8 @@
 
 // --- Configuration ---
 $inputJsonFile = 'usernames.json'; // Path to your JSON file with usernames
-$outputTxtFile = 'extracted_proxy_links.txt'; // Path to save the extracted links
+$outputHtmlFile = 'index.html';     // Path to save the HTML output
+$outputJsonFile = 'extracted_proxies.json'; // Path to save the JSON output
 $telegramBaseUrl = 'https://t.me/s/'; // Base URL for channel archives
 
 // --- Script Logic ---
@@ -32,13 +33,12 @@ if (!is_array($usernames)) {
 
 echo "Successfully read " . count($usernames) . " usernames from '$inputJsonFile'.\n";
 
-// Array to store unique extracted links
-$allExtractedLinks = [];
+// Use an associative array to store unique proxies, using the tg:// URL as the key
+$uniqueProxies = [];
 
-// Regex pattern to find Telegram proxy links
-// It looks for:
-// - https?://t.me/proxy? OR tg://proxy?
-// - followed by characters that are valid in URLs but *not* quotes or whitespace (to stop at the end of an attribute or simple text)
+// Regex pattern to find full Telegram proxy links (tg:// or https://t.me/proxy?)
+// This pattern aims to capture the full URL including parameters
+// It stops at whitespace or quotes, which usually works within HTML attributes
 $proxyRegex = '/(?:https?:\/\/t\.me\/proxy\?|tg:\/\/proxy\?)[^"\'\s]+/i';
 
 // 2. Loop through each username
@@ -52,14 +52,13 @@ foreach ($usernames as $username) {
     $channelUrl = $telegramBaseUrl . urlencode($username); // Build the URL
     echo "Processing username: '$username' (URL: $channelUrl)\n";
 
-    // 3. Fetch content from the URL using cURL for better control
+    // 3. Fetch content from the URL using cURL
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $channelUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the transfer as a string
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Follow redirects
     curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Set a timeout in seconds
-    // Optional: Set a user agent to mimic a browser, might help avoid blocking
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; PHP Proxy Extractor/1.0; +https://github.com/your-username/your-repo)'); // Identify your script
 
     $htmlContent = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -74,18 +73,54 @@ foreach ($usernames as $username) {
 
     if ($httpCode != 200) {
          echo "Warning: Received HTTP status code $httpCode for '$username'. Skipping.\n";
-         // You might want to check for 404 specifically if needed
          continue; // Skip to the next username
     }
 
     // 4. Search the content for proxy links
     $matches = [];
     if (preg_match_all($proxyRegex, $htmlContent, $matches)) {
-        echo "Found " . count($matches[0]) . " potential proxy links.\n";
-        // Add found links to the main storage array
-        $allExtractedLinks = array_merge($allExtractedLinks, $matches[0]);
+        echo "Found " . count($matches[0]) . " potential proxy URLs.\n";
+
+        // 5. Process found URLs
+        foreach ($matches[0] as $foundUrl) {
+            // Parse the URL to extract components
+            $parsedUrl = parse_url($foundUrl);
+
+            if ($parsedUrl && isset($parsedUrl['query'])) {
+                $query = [];
+                parse_str($parsedUrl['query'], $query);
+
+                // Check if server, port, and secret are present
+                if (isset($query['server']) && isset($query['port']) && isset($query['secret'])) {
+                    $server = $query['server'];
+                    $port = $query['port'];
+                    $secret = $query['secret'];
+
+                    // Construct the canonical tg:// URL for uniqueness and connection
+                    $tgUrl = "tg://proxy?server={$server}&port={$port}&secret={$secret}";
+
+                    // Store if unique
+                    if (!isset($uniqueProxies[$tgUrl])) {
+                         $uniqueProxies[$tgUrl] = [
+                             'tg_url' => $tgUrl,
+                             'server' => $server,
+                             'port' => $port,
+                             'secret' => $secret,
+                             // You could potentially store the original foundUrl as well if needed
+                             // 'original_url' => $foundUrl
+                         ];
+                         echo " - Extracted: $tgUrl\n";
+                    }
+                } else {
+                     echo " - Warning: Found URL looks like a proxy but missing required params: $foundUrl\n";
+                }
+            } else {
+                 echo " - Warning: Could not parse query from potential URL: $foundUrl\n";
+            }
+        }
+
     } else {
-        echo "No proxy links found in the content for '$username'.\n";
+        echo "No proxy URLs found in the content for '$username'.\n";
     }
 
     // Optional: Add a small delay between requests to be polite
@@ -93,27 +128,71 @@ foreach ($usernames as $username) {
 
 } // End of username loop
 
-// 5. Make the list of links unique
-$uniqueExtractedLinks = array_unique($allExtractedLinks);
+// 6. Prepare data for output
+$extractedProxyList = array_values($uniqueProxies); // Convert associative array back to indexed array for JSON
+
 echo "\nFinished processing all usernames.\n";
-echo "Total potential links found (including duplicates): " . count($allExtractedLinks) . "\n";
-echo "Unique extracted links: " . count($uniqueExtractedLinks) . "\n";
+echo "Total unique extracted proxies: " . count($extractedProxyList) . "\n";
 
-// 6. Store unique links in the output file
-if (count($uniqueExtractedLinks) > 0) {
-    $outputContent = implode("\n", $uniqueExtractedLinks);
+// 7. Generate and store JSON output
+if (count($extractedProxyList) > 0) {
+    $jsonOutputContent = json_encode($extractedProxyList, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES); // Pretty print and don't escape slashes
 
-    if (file_put_contents($outputTxtFile, $outputContent) === false) {
-        echo "Error: Could not write extracted links to '$outputTxtFile'\n";
+    if (file_put_contents($outputJsonFile, $jsonOutputContent) === false) {
+        echo "Error: Could not write extracted links to '$outputJsonFile'\n";
     } else {
-        echo "Successfully wrote " . count($uniqueExtractedLinks) . " unique links to '$outputTxtFile'\n";
+        echo "Successfully wrote " . count($extractedProxyList) . " unique proxies to '$outputJsonFile'\n";
     }
 } else {
-    echo "No unique proxy links were found to save.\n";
+    echo "No unique proxies were found to save to JSON.\n";
     // Optional: remove the output file if it exists and is empty
-    // if (file_exists($outputTxtFile)) {
-    //     unlink($outputTxtFile);
+    // if (file_exists($outputJsonFile)) {
+    //     unlink($outputJsonFile);
     // }
+}
+
+// 8. Generate and store HTML output
+$htmlOutputContent = '<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Proxy List</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; line-height: 1.6; }
+        h1 { text-align: center; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 10px; border: 1px solid #eee; padding: 10px; border-radius: 5px; }
+        a { text-decoration: none; color: #007bff; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Extracted Telegram Proxies</h1>
+    <p>Click on a link below to connect directly to the proxy in Telegram.</p>
+    <ul>
+';
+
+if (count($extractedProxyList) > 0) {
+    foreach ($extractedProxyList as $proxy) {
+        // Use the tg_url for the clickable link
+        $htmlOutputContent .= '<li><a href="' . htmlspecialchars($proxy['tg_url']) . '">' . htmlspecialchars($proxy['tg_url']) . '</a></li>' . "\n";
+    }
+} else {
+    $htmlOutputContent .= '<li>No proxies found.</li>' . "\n";
+}
+
+$htmlOutputContent .= '
+    </ul>
+    <p>Last updated: ' . date('Y-m-d H:i:s') . ' UTC</p>
+</body>
+</html>
+';
+
+if (file_put_contents($outputHtmlFile, $htmlOutputContent) === false) {
+    echo "Error: Could not write HTML output to '$outputHtmlFile'\n";
+} else {
+    echo "Successfully wrote HTML output to '$outputHtmlFile'\n";
 }
 
 echo "--- Script Finished ---\n";
