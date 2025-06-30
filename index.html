@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Proxy List</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif; /* Default font */
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+         /* Apply Vazirmatn for Persian text */
+        [dir="rtl"] {
+            font-family: 'Vazirmatn', sans-serif;
+            text-align: right;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        .proxy-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        .proxy-item {
+            display: flex;
+            flex-direction: column; /* Stack elements on small screens */
+            align-items: flex-start; /* Align to the start */
+            background-color: #e9f7ef; /* Light green background */
+            border: 1px solid #d0e9e1;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            word-break: break-all; /* Break long URLs */
+        }
+        .proxy-item .proxy-link {
+             flex-grow: 1; /* Allow the link part to take available space */
+             margin-bottom: 10px; /* Space between link and buttons on stacked layout */
+             font-family: 'Courier New', Courier, monospace; /* Monospace for technical look */
+             font-size: 0.9em;
+             color: #0056b3;
+             display: block; /* Make the span a block to apply margin-bottom */
+        }
+        .proxy-item .proxy-actions {
+            display: flex;
+            gap: 10px; /* Space between buttons */
+            flex-shrink: 0; /* Prevent actions from shrinking */
+            width: 100%; /* Full width on stacked layout */
+        }
+        .proxy-item a,
+        .proxy-item button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+            flex-grow: 1; /* Grow to fill available space in actions row */
+            text-align: center; /* Center text in buttons */
+        }
+        .proxy-item a.connect-button {
+            background-color: #28a745; /* Green */
+            color: white;
+            border: 1px solid #218838;
+        }
+        .proxy-item a.connect-button:hover {
+            background-color: #218838;
+        }
+         .proxy-item button.copy-button {
+            background-color: #007bff; /* Blue */
+            color: white;
+            border: 1px solid #0069d9;
+         }
+         .proxy-item button.copy-button:hover {
+            background-color: #0069d9;
+         }
+         .proxy-item button.copy-button:active {
+             background-color: #0056b3;
+         }
+
+        .no-proxies {
+            text-align: center;
+            font-style: italic;
+            color: #555;
+        }
+
+        .instructions {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .instructions h2 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        .instructions p, .instructions ul {
+            margin-bottom: 15px;
+        }
+        .instructions ul, .instructions ol { /* Apply padding to ol as well */
+            padding-left: 20px;
+        }
+         [dir="rtl"].instructions ul, [dir="rtl"].instructions ol { /* Adjust padding for RTL */
+            padding-left: 0;
+            padding-right: 20px;
+        }
+        .instructions li {
+            margin-bottom: 8px;
+            padding: 0; /* Override proxy-item padding */
+            border: none; /* Override proxy-item border */
+        }
+        .instructions code {
+            background-color: #eee;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+         .instructions span[style] { /* Style the colored spans in instructions */
+             display: inline-block; /* Allows padding */
+             white-space: nowrap; /* Keep text together */
+         }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #777;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 30px 0;
+        }
+
+
+        /* Responsive adjustments */
+        @media (min-width: 600px) {
+            .proxy-item {
+                flex-direction: row; /* Arrange elements in a row on larger screens */
+                align-items: center; /* Vertically align in the middle */
+            }
+            .proxy-item .proxy-link {
+                 margin-bottom: 0; /* Remove bottom margin when in a row */
+                 margin-right: 15px; /* Add space between link and buttons */
+            }
+             [dir="rtl"] .proxy-item .proxy-link {
+                 margin-right: 0; /* Remove right margin for RTL */
+                 margin-left: 15px; /* Add left margin for RTL */
+            }
+            .proxy-item .proxy-actions {
+                 width: auto; /* Auto width when in a row */
+                 flex-grow: 0; /* Prevent actions from growing excessively */
+            }
+             .proxy-item a,
+            .proxy-item button {
+                flex-grow: 0; /* Don't grow in the row layout */
+                width: auto; /* Auto width based on content/padding */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Telegram Proxy List</h1>
+
+        <p>Here are automatically extracted Telegram MTProto proxies. Click "Connect" to add directly via Telegram link, or "Copy" to copy the link to your clipboard.</p>
+
+        <ul class="proxy-list">
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.99.162.236&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.99.162.236&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.99.162.236&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.99.162.236&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.99.162.236&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.99.162.236&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=140.233.187.92&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=140.233.187.92&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=140.233.187.92&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=140.233.187.92&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=140.233.187.92&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=140.233.187.92&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.99.205.132&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.99.205.132&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.99.205.132&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.99.205.132&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.99.205.132&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.99.205.132&amp;port=70&amp;secret=7gAA8A8Pd1VV____9QBuLmktLXcuZ28tLS0=&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=518.8-58-185.ir&amp;port=443&amp;secret=1320PuNyHw_LQKT_Y7XNJw==</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=518.8-58-185.ir&amp;port=443&amp;secret=1320PuNyHw_LQKT_Y7XNJw==" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=518.8-58-185.ir&amp;port=443&amp;secret=1320PuNyHw_LQKT_Y7XNJw==">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=518.8-58-185.ir&amp;port=443&amp;secret=1320PuNyHw_LQKT_Y7XNJw==&lt;/a&gt;&lt;/div&gt;</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=518.8-58-185.ir&amp;port=443&amp;secret=1320PuNyHw_LQKT_Y7XNJw==&lt;/a&gt;&lt;/div&gt;" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=518.8-58-185.ir&amp;port=443&amp;secret=1320PuNyHw_LQKT_Y7XNJw==&lt;/a&gt;&lt;/div&gt;">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.99.182.38&amp;port=70&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.99.182.38&amp;port=70&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.99.182.38&amp;port=70&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.99.182.38&amp;port=70&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.99.182.38&amp;port=70&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.99.182.38&amp;port=70&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.99.237.50&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.99.237.50&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.99.237.50&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.99.237.50&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.99.237.50&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.99.237.50&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=140.233.187.60&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=140.233.187.60&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=140.233.187.60&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=140.233.187.60&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=140.233.187.60&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=140.233.187.60&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276d656469612e737465616d706f77657265642e636f6d&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=bede6.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=bede6.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=bede6.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=bede6.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;/div&gt;</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=bede6.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;/div&gt;" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=bede6.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;/div&gt;">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=146.103.105.166&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=146.103.105.166&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=146.103.105.166&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=146.103.105.166&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=146.103.105.166&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=146.103.105.166&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=87.229.100.239&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=87.229.100.239&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=87.229.100.239&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=87.229.100.239&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=87.229.100.239&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=87.229.100.239&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;&lt;a">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=79.172.228.29&amp;port=70&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=79.172.228.29&amp;port=70&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=79.172.228.29&amp;port=70&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=79.172.228.29&amp;port=70&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D&lt;/a&gt;&lt;/div&gt;</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=79.172.228.29&amp;port=70&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D&lt;/a&gt;&lt;/div&gt;" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=79.172.228.29&amp;port=70&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D&lt;/a&gt;&lt;/div&gt;">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=100.Ir.ir.ir.ir.ir.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=100.Ir.ir.ir.ir.ir.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=100.Ir.ir.ir.ir.ir.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=Mortal-Vovok.nuremborg-hamborg.dodos-codam.mehrvilla.info&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=Mortal-Vovok.nuremborg-hamborg.dodos-codam.mehrvilla.info&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=Mortal-Vovok.nuremborg-hamborg.dodos-codam.mehrvilla.info&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=37.27.59.72&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=37.27.59.72&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=37.27.59.72&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=01111.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=01111.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=01111.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=176.65.135.57&amp;port=220&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=176.65.135.57&amp;port=220&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=176.65.135.57&amp;port=220&amp;secret=ee0000f00f0f775555fffffff5006e2e696D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=49.13.145.67&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=49.13.145.67&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=49.13.145.67&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=49.13.145.84&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=49.13.145.84&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=49.13.145.84&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=49.13.145.61&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=49.13.145.61&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=49.13.145.61&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=23.88.51.230&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=23.88.51.230&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=23.88.51.230&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=51.159.149.220&amp;port=8000&amp;secret=eee72cf91a4fee7902896720b31c3c14e27777772e736974652e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=51.159.149.220&amp;port=8000&amp;secret=eee72cf91a4fee7902896720b31c3c14e27777772e736974652e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=51.159.149.220&amp;port=8000&amp;secret=eee72cf91a4fee7902896720b31c3c14e27777772e736974652e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=65.21.254.170&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=65.21.254.170&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=65.21.254.170&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=128.140.13.248&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=128.140.13.248&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=128.140.13.248&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=37.27.8.188&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=37.27.8.188&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=37.27.8.188&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=65.108.80.13&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=65.108.80.13&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=65.108.80.13&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=49.13.145.55&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=49.13.145.55&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=49.13.145.55&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=49.13.145.80&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=49.13.145.80&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=49.13.145.80&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=51.159.157.218&amp;port=7743&amp;secret=eedbe97246f57a3e90ccc1c3f25b8e15ef7777772e736974652e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=51.159.157.218&amp;port=7743&amp;secret=eedbe97246f57a3e90ccc1c3f25b8e15ef7777772e736974652e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=51.159.157.218&amp;port=7743&amp;secret=eedbe97246f57a3e90ccc1c3f25b8e15ef7777772e736974652e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=51.159.165.172&amp;port=7549&amp;secret=eeff9890eed0a3c6fbfafeb2608a4aedb37777772e736974652e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=51.159.165.172&amp;port=7549&amp;secret=eeff9890eed0a3c6fbfafeb2608a4aedb37777772e736974652e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=51.159.165.172&amp;port=7549&amp;secret=eeff9890eed0a3c6fbfafeb2608a4aedb37777772e736974652e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=51.159.166.112&amp;port=7603&amp;secret=ee0ad565389bb264b33c81f11bd42c104b7777772e736974652e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=51.159.166.112&amp;port=7603&amp;secret=ee0ad565389bb264b33c81f11bd42c104b7777772e736974652e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=51.159.166.112&amp;port=7603&amp;secret=ee0ad565389bb264b33c81f11bd42c104b7777772e736974652e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=49.13.145.62&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=49.13.145.62&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=49.13.145.62&amp;port=443&amp;secret=3QAAAAAAAAAAAAAAAAAAAAA=">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=fasst.sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=fasst.sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=fasst.sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=Iran.harcibasheokeye.ir&amp;port=9841&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=Iran.harcibasheokeye.ir&amp;port=9841&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=Iran.harcibasheokeye.ir&amp;port=9841&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=Fuck-War.harcibasheokeye.ir&amp;port=110&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=Fuck-War.harcibasheokeye.ir&amp;port=110&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=Fuck-War.harcibasheokeye.ir&amp;port=110&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=namira-paris.nuremborg-hamborg.dodos-codam.jojo19.ir&amp;port=443&amp;secret=7gD_AA___wD_9VVf______VtZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=namira-paris.nuremborg-hamborg.dodos-codam.jojo19.ir&amp;port=443&amp;secret=7gD_AA___wD_9VVf______VtZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=namira-paris.nuremborg-hamborg.dodos-codam.jojo19.ir&amp;port=443&amp;secret=7gD_AA___wD_9VVf______VtZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=87.229.100.253&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=87.229.100.253&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=87.229.100.253&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.234.39.50&amp;port=8080&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.234.39.50&amp;port=8080&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.234.39.50&amp;port=8080&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=www.vsmusic.ir&amp;port=888&amp;secret=7gwwYoISy716xRkTAgVSXRVpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=www.vsmusic.ir&amp;port=888&amp;secret=7gwwYoISy716xRkTAgVSXRVpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=www.vsmusic.ir&amp;port=888&amp;secret=7gwwYoISy716xRkTAgVSXRVpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=62.60.179.210&amp;port=9741&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=62.60.179.210&amp;port=9741&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=62.60.179.210&amp;port=9741&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=62.60.179.229&amp;port=9741&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=62.60.179.229&amp;port=9741&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=62.60.179.229&amp;port=9741&amp;secret=ee0000f00f0f775555fffffff5006e2e696d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=new.sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=new.sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=new.sitemcinet.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=46.249.110.51&amp;port=443&amp;secret=15115115115115115115115115115115</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=46.249.110.51&amp;port=443&amp;secret=15115115115115115115115115115115" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=46.249.110.51&amp;port=443&amp;secret=15115115115115115115115115115115">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=46.249.110.53&amp;port=443&amp;secret=15115115115115115115115115115115</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=46.249.110.53&amp;port=443&amp;secret=15115115115115115115115115115115" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=46.249.110.53&amp;port=443&amp;secret=15115115115115115115115115115115">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=lf.mohs1736.sbs&amp;port=4637&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=lf.mohs1736.sbs&amp;port=4637&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=lf.mohs1736.sbs&amp;port=4637&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=Yoast.harcibasheokeye.ir&amp;port=918&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=Yoast.harcibasheokeye.ir&amp;port=918&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=Yoast.harcibasheokeye.ir&amp;port=918&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.24&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.24&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.24&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.25&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.25&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.25&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.21&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.21&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.21&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.20&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.20&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.20&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=www.galacticfireworks.pro.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=www.galacticfireworks.pro.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=www.galacticfireworks.pro.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=www.newtcpconnectiodo.store&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=www.newtcpconnectiodo.store&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=www.newtcpconnectiodo.store&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=www.wwweror.space.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=www.wwweror.space.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=www.wwweror.space.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=www.udpoutgoinn.xyz.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=www.udpoutgoinn.xyz.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=www.udpoutgoinn.xyz.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=176.65.135.63&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=176.65.135.63&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=176.65.135.63&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=176.65.135.43&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=176.65.135.43&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=176.65.135.43&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=upsproblack.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=upsproblack.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=upsproblack.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=ir.rayanartist.sbs.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=ir.rayanartist.sbs.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=ir.rayanartist.sbs.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=www.hihim.sbs&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=www.hihim.sbs&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=www.hihim.sbs&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.48&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.48&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.48&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.43&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.43&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.43&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.23&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.23&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.23&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=176.65.135.42&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=176.65.135.42&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=176.65.135.42&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=176.65.135.64&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=176.65.135.64&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=176.65.135.64&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=syczleck.itemag.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=syczleck.itemag.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=syczleck.itemag.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=wait.fiziotr.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=wait.fiziotr.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=wait.fiziotr.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=176.65.135.65&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=176.65.135.65&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=176.65.135.65&amp;port=23&amp;secret=eeNEgYdJvXrFGRMCIMJdCQtY2RueWVrdGFuZXQuY29tZmFyYWthdi5jb212YW4ubmFqdmEuY29tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=110899.meli.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=110899.meli.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=110899.meli.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=1170899.meli.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=1170899.meli.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=1170899.meli.meli.zban-mas.info&amp;port=8888&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=aval.fsaremi.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=aval.fsaremi.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=aval.fsaremi.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=algortim.sayaair.ir&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=algortim.sayaair.ir&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=algortim.sayaair.ir&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=newdomain1.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=newdomain1.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=newdomain1.co.uk&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=halftime.parsintalk.ir&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=halftime.parsintalk.ir&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=halftime.parsintalk.ir&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=response.cinere.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=response.cinere.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=response.cinere.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=wait.fiziotr.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=wait.fiziotr.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=wait.fiziotr.info&amp;port=443&amp;secret=7hYDAQIAAQAB_AMDhuJMOt1tZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=iran.zibayi.shop.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=iran.zibayi.shop.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=iran.zibayi.shop.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=BodoBodo.khoshghovar.online.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=BodoBodo.khoshghovar.online.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=BodoBodo.khoshghovar.online.&amp;port=888&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.97&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.97&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.97&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.98&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.98&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.98&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.99&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.99&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.99&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.100&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.100&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.100&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=23.236.186.146&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=23.236.186.146&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=23.236.186.146&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=87.229.100.159&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=87.229.100.159&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=87.229.100.159&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=irangodrati.co.uk.&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=irangodrati.co.uk.&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=irangodrati.co.uk.&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=37.27.66.40&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=37.27.66.40&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=37.27.66.40&amp;port=443&amp;secret=7s8J5YYVhvOdr-WqHy_58gVtZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=response.cinere.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=response.cinere.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=response.cinere.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=aval.fsaremi.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=aval.fsaremi.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=aval.fsaremi.info&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=87.229.100.160&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=87.229.100.160&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=87.229.100.160&amp;port=443&amp;secret=7gAA8A8Pd1VV____9QBuLmltZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=algortim.sayaair.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=algortim.sayaair.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=algortim.sayaair.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=sadra.mygrade.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=sadra.mygrade.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=sadra.mygrade.ir&amp;port=443&amp;secret=ee1603010200010001fc030386e24c3add6d656469612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=6443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=6443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=6443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=5443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=5443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=5443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=8443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=8443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=8443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=7443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=7443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=7443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=9443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=9443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=9443.iropt-f.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=87.229.100.251&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=87.229.100.251&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=87.229.100.251&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=87.229.100.238&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=87.229.100.238&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=87.229.100.238&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=87.229.100.237&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=87.229.100.237&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=87.229.100.237&amp;port=443&amp;secret=eeRighJJvXrFGRMCIMJdCQ">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=5.35.46.6&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=5.35.46.6&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=5.35.46.6&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=212.34.137.241&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=212.34.137.241&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=212.34.137.241&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=195.62.32.242&amp;port=443&amp;secret=7gD_AA___wD_9VVf______VtZWRpYS5zdGVhbXBvd2VyZWQuY29t</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=195.62.32.242&amp;port=443&amp;secret=7gD_AA___wD_9VVf______VtZWRpYS5zdGVhbXBvd2VyZWQuY29t" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=195.62.32.242&amp;port=443&amp;secret=7gD_AA___wD_9VVf______VtZWRpYS5zdGVhbXBvd2VyZWQuY29t">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=62.60.179.221&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=62.60.179.221&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=62.60.179.221&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=62.60.176.10&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=62.60.176.10&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=62.60.176.10&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=4.link-a3.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=4.link-a3.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=4.link-a3.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=5.link-a3.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=5.link-a3.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=5.link-a3.ir&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=62.60.178.216&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=62.60.178.216&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=62.60.178.216&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=62.60.178.240&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=62.60.178.240&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=62.60.178.240&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.84.106.230&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.84.106.230&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.84.106.230&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=91.84.105.170&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=91.84.105.170&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=91.84.105.170&amp;port=443&amp;secret=eed77db43ee3721f0fcb40a4ff63b5cd276D656469612E737465616D706F77657265642E636F6D">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.103&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.103&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.103&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.104&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.104&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.104&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+            <li>
+                <div class="proxy-item">
+                    <span class="proxy-link">tg://proxy?server=14.102.10.102&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d</span>
+                    <div class="proxy-actions">
+                        <a href="tg://proxy?server=14.102.10.102&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d" class="connect-button" target="_blank">Connect</a>
+                        <button class="copy-button" data-url="tg://proxy?server=14.102.10.102&amp;port=85&amp;secret=ee0c30628212cbbd7ac519130205525d1569612e737465616d706f77657265642e636f6d">Copy</button>
+                    </div>
+                </div>
+            </li>
+
+        </ul>
+
+        <div class="instructions">
+            <h2>How to Connect</h2>
+            <p>Telegram MTProto proxies help bypass censorship and restrictions.</ Here's how to use the links:</p>
+            <h3>Method 1: Direct Link (Recommended)</h3>
+            <ol>
+                <li>Ensure you have the official Telegram app installed on your device (mobile or desktop).</li>
+                <li>Click the "<span style="color:white; background-color:#28a745; padding: 2px 5px; border-radius: 3px;">Connect</span>" button next to a proxy link.</li>
+                <li>If Telegram is installed and configured correctly, it should open and prompt you to add the proxy.</li>
+                <li>Confirm adding the proxy within the Telegram app.</li>
+            </ol>
+             <h3>Method 2: Copy and Paste Manually</h3>
+             <p>If clicking the link doesn't work (e.g., some desktop browsers, or if you prefer manual setup):</p>
+             <ol>
+                <li>Click the "<span style="color:white; background-color:#007bff; padding: 2px 5px; border-radius: 3px;">Copy</span>" button next to the proxy link. The link will be copied to your clipboard.</li>
+                <li>Open the Telegram app.</li>
+                <li>Go to Settings (⚙️).</li>
+                <li>Navigate to Data and Storage.</li>
+                <li>Scroll down to Proxy Settings.</li>
+                <li>Tap "Add Proxy".</li>
+                <li>Select "MTProto".</li>
+                <li>You should see an option to "Use tg:// link" or similar (this might vary slightly by app version/OS). Paste the copied link there. Alternatively, you can manually enter the server, port, and secret if the app allows.</li>
+                <li>Save the proxy.</li>
+             </ol>
+             <p><strong>Note:</strong> Proxy availability can change. If a proxy doesn't work, try another from the list. This list is updated automatically.</p>
+        </div>
+
+        <hr> <!-- Horizontal rule to separate English and Persian instructions -->
+
+        <div class="instructions" dir="rtl"> <!-- Added dir="rtl" for Persian section -->
+            <h2>راهنمای اتصال</h2>
+            <p>پراکسی‌های MTProto تلگرام به عبور از سانسور و محدودیت‌ها کمک می‌کنند. در اینجا نحوه استفاده از لینک‌ها آمده است:</p>
+            <h3>روش ۱: لینک مستقیم (توصیه شده)</h3>
+            <ol>
+                <li>مطمئن شوید برنامه رسمی تلگرام روی دستگاه شما (موبایل یا دسکتاپ) نصب است.</li>
+                <li>روی دکمه "<span style="color:white; background-color:#28a745; padding: 2px 5px; border-radius: 3px; unicode-bidi: embed;">اتصال</span>" کنار لینک پراکسی کلیک کنید. <span style="unicode-bidi: embed;">(Connect)</span></li>
+                <li>اگر تلگرام به درستی نصب و پیکربندی شده باشد، باز شده و از شما می‌خواهد که پراکسی را اضافه کنید.</li>
+                <li>اضافه کردن پراکسی را در برنامه تلگرام تایید کنید.</li>
+            </ol>
+             <h3>روش ۲: کپی کردن و افزودن دستی</h3>
+             <p>اگر کلیک روی لینک کار نکرد (مثلاً در برخی مرورگرهای دسکتاپ، یا اگر تنظیم دستی را ترجیح می‌دهید):</p>
+             <ol>
+                <li>روی دکمه "<span style="color:white; background-color:#007bff; padding: 2px 5px; border-radius: 3px; unicode-bidi: embed;">کپی</span>" کنار لینک پراکسی کلیک کنید. لینک در کلیپ‌بورد شما کپی خواهد شد. <span style="unicode-bidi: embed;">(Copy)</span></li>
+                <li>برنامه تلگرام را باز کنید.</li>
+                <li>به تنظیمات (⚙️) بروید.</li>
+                <li>به بخش داده و ذخیره‌سازی (Data and Storage) بروید.</li>
+                <li>پایین صفحه به تنظیمات پراکسی (Proxy Settings) بروید.</li>
+                <li>روی "افزودن پراکسی" (Add Proxy) ضربه بزنید.</li>
+                <li>نوع "MTProto" را انتخاب کنید.</li>
+                <li>باید گزینه‌ای مانند "استفاده از لینک tg://" را ببینید (این ممکن است بسته به نسخه برنامه/سیستم عامل کمی متفاوت باشد). لینک کپی شده را در آنجا بچسبانید. همچنین، اگر برنامه اجازه می‌دهد، می‌توانید سرور، پورت و secret را به صورت دستی وارد کنید.</li>
+                <li>پراکسی را ذخیره کنید.</li>
+             </ol>
+             <p><strong>توجه:</strong> دسترسی به پراکسی ممکن است تغییر کند. اگر یک پراکسی کار نکرد، پراکسی دیگری را از لیست امتحان کنید. این لیست به صورت خودکار به‌روز می‌شود.</p>
+        </div>
+
+
+        <div class="footer">
+            <p>آخرین به‌روزرسانی: 2025-06-30 04:03:19 UTC</p>
+            <p>تولید خودکار توسط گردش کار <a href="https://github.com/stefanzweifel/git-auto-commit-action" target="_blank">git-auto-commit-action</a>.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const copyButtons = document.querySelectorAll('.copy-button');
+
+            copyButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const urlToCopy = this.getAttribute('data-url');
+
+                    // Use the modern Clipboard API
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(urlToCopy).then(() => {
+                            // Success feedback
+                            const originalText = this.textContent;
+                            this.textContent = 'Copied!';
+                            this.style.backgroundColor = '#28a745'; // Green color for success feedback
+                             this.style.borderColor = '#218838';
+                             // Revert text and color after a few seconds
+                            setTimeout(() => {
+                                this.textContent = originalText;
+                                this.style.backgroundColor = ''; // Revert to original blue
+                                this.style.borderColor = '';
+                            }, 2000); // Revert after 2 seconds
+                        }).catch(err => {
+                            console.error('Failed to copy text: ', err);
+                            alert('Error: Could not copy the link.');
+                        });
+                    } else {
+                        // Fallback for older browsers (less common now)
+                        console.warn('Clipboard API not available.');
+                        alert('Please manually select and copy the link: ' + urlToCopy);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
