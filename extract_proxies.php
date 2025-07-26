@@ -379,7 +379,7 @@ $htmlOutputContent .= '
             if (rouletteBtn) {
                 rouletteBtn.addEventListener("click", () => {
                     // 1. Find all available "online" proxy cards.
-                    const onlineCards = document.querySelectorAll(".proxy-card.online");
+                    const onlineCards = document.querySelectorAll(".proxy-card.online:not(.hidden)");
                     if (onlineCards.length === 0) {
                         alert("There are no online proxies available to choose from right now. Try again later!");
                         return;
