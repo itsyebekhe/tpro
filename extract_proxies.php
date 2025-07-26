@@ -9,7 +9,7 @@ $proxyCheckTimeout = 2; // Seconds to wait for a proxy to respond.
 
 // --- Script Logic ---
 ob_start();
-echo "--- Telegram Proxy Extractor v3.0 (Parallel) ---\n";
+echo "--- Telegram Proxy Extractor v3.1 (Parallel) ---\n";
 
 // --- Phase 1: Read Input ---
 if (!file_exists($inputJsonFile)) die("Error: Input JSON file not found at '$inputJsonFile'\n");
@@ -32,13 +32,12 @@ foreach ($usernames as $username) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_TIMEOUT => 30,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; PHP-Proxy-Extractor/3.0)'
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; PHP-Proxy-Extractor/3.1)'
     ]);
     curl_multi_add_handle($multiHandle, $ch);
     $urlHandles[$channelUrl] = $ch;
 }
 
-// Execute the parallel requests
 $running = null;
 do {
     curl_multi_exec($multiHandle, $running);
@@ -79,11 +78,9 @@ curl_multi_close($multiHandle);
 // --- Phase 4: De-duplicate and Check Proxy Status ---
 echo "Fetch complete. Found " . count($allExtractedProxies) . " potential proxies. De-duplicating and checking status...\n";
 
-// Helper function to check proxy status and latency
 function checkProxyStatus(string $server, int $port, int $timeout): array {
     $startTime = microtime(true);
-    // Use "tcp://" scheme for fsockopen with IP addresses.
-    // Error suppression is used because we are handling the error condition ourselves.
+    // Suppress warnings as we handle the error condition.
     $socket = @fsockopen("tcp://$server", $port, $errno, $errstr, $timeout);
     
     if ($socket) {
@@ -109,16 +106,11 @@ $proxyCount = count($proxiesWithStatus);
 
 // --- Phase 5: Sort Proxies (Best First) ---
 usort($proxiesWithStatus, function ($a, $b) {
-    // Online proxies always come before Offline ones
     if ($a['status'] === 'Online' && $b['status'] === 'Offline') return -1;
     if ($a['status'] === 'Offline' && $b['status'] === 'Online') return 1;
-    
-    // If both are Online, sort by latency (ascending)
     if ($a['status'] === 'Online' && $b['status'] === 'Online') {
         return $a['latency'] <=> $b['latency'];
     }
-    
-    // If both are Offline, their order doesn't matter
     return 0;
 });
 
@@ -158,6 +150,8 @@ $htmlOutputContent = '<!DOCTYPE html>
         body { font-family: var(--font-main); margin: 0; padding: 20px; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
         .container { max-width: 800px; margin: 20px auto; }
         header { text-align: center; margin-bottom: 20px; }
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        header p { font-size: 1.1rem; color: var(--subtle-text-color); }
         .proxy-card { background-color: var(--card-bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px var(--shadow-color); }
         .proxy-card.offline { opacity: 0.6; border-left: 4px solid var(--danger-color); }
         .proxy-card.online { border-left: 4px solid var(--success-color); }
@@ -170,8 +164,6 @@ $htmlOutputContent = '<!DOCTYPE html>
         .status-dot.offline { background-color: var(--danger-color); }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); } }
         .proxy-info { font-family: var(--font-mono); background-color: var(--bg-color); padding: 5px 10px; border-radius: 6px; word-break: break-all; }
-        /* Other styles are mostly the same... */
-        .controls-bar, .pagination-controls, .instructions, .footer, .action-btn, #qr-modal, etc. { /* styles from previous version */ }
         .controls-bar { background-color: var(--card-bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between; margin-bottom: 25px; }
         .controls-bar select { padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 1rem; }
         .list-status { color: var(--subtle-text-color); font-size: 0.9rem; }
@@ -191,6 +183,15 @@ $htmlOutputContent = '<!DOCTYPE html>
         .instructions summary::after { content: "+"; font-size: 1.5rem; transition: transform 0.2s ease; }
         .instructions[open] summary::after { transform: rotate(45deg); }
         .instructions-content { padding: 0 20px 20px; border-top: 1px solid var(--border-color); }
+        .instructions-content h3 { margin-top: 25px; margin-bottom: 10px; }
+        .instructions-content ol { padding-left: 20px; }
+        .instructions-content code { background-color: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); }
+        [dir="rtl"] { font-family: var(--font-rtl); text-align: right; }
+        [dir="rtl"] .instructions summary { flex-direction: row-reverse; }
+        [dir="rtl"] .instructions-content ol { padding-left: 0; padding-right: 20px; }
+        #qr-modal { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; backdrop-filter: blur(5px); }
+        #qr-modal.visible { opacity: 1; visibility: visible; }
+        .modal-content { background-color: #fff; padding: 25px; border-radius: 16px; text-align: center; }
         .footer { text-align: center; margin-top: 40px; font-size: 0.9em; color: var(--subtle-text-color); }
     </style>
 </head>
@@ -219,7 +220,7 @@ if ($proxyCount > 0) {
         $tgUrl = htmlspecialchars($proxy['tg_url']);
         $server = htmlspecialchars($proxy['server']);
         $port = htmlspecialchars($proxy['port']);
-        $statusClass = strtolower($proxy['status']); // "online" or "offline"
+        $statusClass = strtolower($proxy['status']);
         
         $htmlOutputContent .= '
             <div class="proxy-card ' . $statusClass . '">
@@ -235,9 +236,19 @@ if ($proxyCount > 0) {
         $htmlOutputContent .= '
                 </div>
                 <div class="proxy-actions">
-                     <a href="' . $tgUrl . '" class="action-btn connect-btn" target="_blank">...</a>
-                     <button class="action-btn copy-btn" data-url="' . $tgUrl . '">...</button>
-                     <button class="action-btn qr-btn" data-url="' . $tgUrl . '">...</button>
+                    <a href="' . $tgUrl . '" class="action-btn connect-btn" target="_blank">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/></svg>
+                        <span>Connect</span>
+                    </a>
+                    <button class="action-btn copy-btn" data-url="' . $tgUrl . '">
+                        <svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/></svg>
+                        <svg class="icon-check" style="display:none;" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                        <span>Copy</span>
+                    </button>
+                    <button class="action-btn qr-btn" data-url="' . $tgUrl . '">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 .5A.5.5 0 0 1 .5 0h3a.5.5 0 0 1 0 1H1v2.5a.5.5 0 0 1-1 0zM12 .5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0V1h-2.5a.5.5 0 0 1-.5-.5M.5 12a.5.5 0 0 1 .5.5V15h2.5a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1H15v-2.5a.5.5 0 0 1 .5-.5M4 4h1v1H4z"/><path d="M7 2H2v5h5zM3 3h3v3H3zm2 8.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m12-4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5M11 9h1v1h-1zM9 9h1v1H9zm4 4h1v1h-1zm-2 0h1v1h-1zm-2 0h1v1h-1zm4-2h1v1h-1zm-2 0h1v1h-1zm-2 0h1v1h-1zm2-2h1v1h-1zM9 11h1v1H9zm2-2H9v5h5V9h-2zM4 11h1v1H4zm-2 0h1v1H2zm-2 0h1v1H0z"/></svg>
+                        <span>Show QR</span>
+                    </button>
                 </div>
             </div>';
     }
@@ -248,142 +259,97 @@ if ($proxyCount > 0) {
             <button id="next-btn" class="pagination-btn">Next</button>
         </div>';
 } else {
-    $htmlOutputContent .= '<p style="text-align:center;">No proxies found.</p>';
+    $htmlOutputContent .= '<p style="text-align:center;padding:40px;font-size:1.1rem;color:var(--subtle-text-color);">No proxies found in the latest scan.</p>';
 }
 
 $htmlOutputContent .= '
-        <!-- Instructions, Footer, Modal, and JavaScript (mostly unchanged) -->
-        <details class="instructions"> ... </details>
-        <div class="footer"> ... </div>
-        <div id="qr-modal"> ... </div>
+        <details class="instructions" style="margin-top:50px;"><summary>How to Connect</summary><div class="instructions-content"><p>Telegram MTProto proxies help bypass censorship. Here’s how to use them:</p><h3>Method 1: Direct Link (Desktop/Mobile)</h3><ol><li>Click the green "Connect" button.</li><li>Your browser will ask to open Telegram. Allow it.</li><li>Telegram will open and show a confirmation screen. Tap "Connect Proxy".</li></ol><h3>Method 2: QR Code (Best for Mobile)</h3><ol><li>Click the gray "Show QR" button. A QR code will appear.</li><li>On your phone, open Telegram and go to <strong>Settings > Data and Storage > Proxy Settings</strong>.</li><li>Tap "Add Proxy" and then tap the QR code icon to scan the code on your screen.</li></ol><h3>Method 3: Copy and Paste</h3><ol><li>Click the blue "Copy" button. The full <code>tg://</code> link is now in your clipboard.</li><li>In Telegram, go to <strong>Settings > Data and Storage > Proxy Settings</strong>.</li><li>Tap "Add Proxy" and paste the link.</li></ol></div></details>
+        <details class="instructions" dir="rtl"><summary>راهنمای اتصال</summary><div class="instructions-content"> <p>پراکسی‌های MTProto تلگرام به عبور از محدودیت‌ها کمک می‌کنند:</p><h3>روش ۱: لینک مستقیم (دسکتاپ/موبایل)</h3><ol><li>روی دکمه سبز رنگ «Connect» کلیک کنید.</li><li>مرورگر شما اجازه باز کردن تلگرام را می‌خواهد. تایید کنید.</li><li>تلگرام باز شده و با نمایش صفحه تایید، روی «Connect Proxy» ضربه بزنید.</li></ol><h3>روش ۲: کد QR (بهترین روش برای موبایل)</h3><ol><li>روی دکمه خاکستری «Show QR» کلیک کنید تا کد QR نمایش داده شود.</li><li>در گوشی خود، به مسیر <strong>تنظیمات > داده و ذخیره‌سازی > تنظیمات پراکسی</strong> بروید.</li><li>گزینه «افزودن پراکسی» را زده و سپس روی آیکون کد QR ضربه بزنید تا کد را از روی صفحه اسکن کنید.</li></ol><h3>روش ۳: کپی و جای‌گذاری</h3><ol><li>روی دکمه آبی «Copy» کلیک کنید تا لینک کامل <code>tg://</code> در حافظه کپی شود.</li><li>در تلگرام، به <strong>تنظیمات > داده و ذخیره‌سازی > تنظیمات پراکسی</strong> بروید.</li><li>«افزودن پراکسی» را زده و لینک را جای‌گذاری کنید.</li></ol></div></details>
+        <div class="footer"><p>Generated by a script. Not affiliated with Telegram.</p></div>
     </div>
+    <div id="qr-modal"><div class="modal-content"><h3>Scan with Telegram</h3><div id="qrcode-container"></div></div></div>
     <script>
-        // Pagination, Copy, and QR Code JavaScript from the previous version works here without changes.
-        // It correctly handles the proxy-card elements regardless of their content.
         document.addEventListener("DOMContentLoaded", () => {
-            // JS code from the previous final answer
+            const proxyCards = Array.from(document.querySelectorAll(".proxy-card"));
+            if (proxyCards.length === 0) return;
+            const itemsPerPageSelect = document.getElementById("items-per-page-select");
+            const listStatus = document.getElementById("list-status");
+            const prevBtn = document.getElementById("prev-btn");
+            const nextBtn = document.getElementById("next-btn");
+            let currentPage = 1;
+            let itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
+            function renderList() {
+                const totalItems = proxyCards.length;
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                currentPage = Math.max(1, Math.min(currentPage, totalPages));
+                proxyCards.forEach(card => card.classList.add("hidden"));
+                const start = (currentPage - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+                const paginatedCards = proxyCards.slice(start, end);
+                paginatedCards.forEach(card => card.classList.remove("hidden"));
+                const startItem = totalItems > 0 ? start + 1 : 0;
+                const endItem = Math.min(end, totalItems);
+                listStatus.textContent = `Showing ${startItem}-${endItem} of ${totalItems}`;
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages || totalItems === 0;
+            }
+            itemsPerPageSelect.addEventListener("change", () => {
+                itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
+                currentPage = 1;
+                renderList();
+            });
+            prevBtn.addEventListener("click", () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderList();
+                    window.scrollTo({ top: document.querySelector(".controls-bar").offsetTop - 20, behavior: "smooth" });
+                }
+            });
+            nextBtn.addEventListener("click", () => {
+                if (currentPage < Math.ceil(proxyCards.length / itemsPerPage)) {
+                    currentPage++;
+                    renderList();
+                    window.scrollTo({ top: document.querySelector(".controls-bar").offsetTop - 20, behavior: "smooth" });
+                }
+            });
+            renderList();
+            const copyButtons = document.querySelectorAll(".copy-btn");
+            copyButtons.forEach(button => {
+                const iconCopy = button.querySelector(".icon-copy");
+                const iconCheck = button.querySelector(".icon-check");
+                const buttonText = button.querySelector("span");
+                const originalText = buttonText.textContent;
+                button.addEventListener("click", () => {
+                    const urlToCopy = button.getAttribute("data-url");
+                    navigator.clipboard.writeText(urlToCopy).then(() => {
+                        iconCopy.style.display = "none";
+                        iconCheck.style.display = "inline-block";
+                        buttonText.textContent = "Copied!";
+                        button.style.backgroundColor = "var(--success-color)";
+                        setTimeout(() => {
+                            iconCopy.style.display = "inline-block";
+                            iconCheck.style.display = "none";
+                            buttonText.textContent = originalText;
+                            button.style.backgroundColor = "";
+                        }, 2000);
+                    });
+                });
+            });
+            const qrModal = document.getElementById("qr-modal");
+            const qrContainer = document.getElementById("qrcode-container");
+            document.querySelectorAll(".qr-btn").forEach(button => {
+                button.addEventListener("click", () => {
+                    const url = button.getAttribute("data-url");
+                    qrContainer.innerHTML = "";
+                    new QRCode(qrContainer, { text: url, width: 220, height: 220 });
+                    qrModal.classList.add("visible");
+                });
+            });
+            qrModal.addEventListener("click", e => { if (e.target === qrModal) qrModal.classList.remove("visible"); });
         });
     </script>
 </body>
 </html>';
-
-// For brevity, I've truncated the repetitive parts of the HTML (buttons, instructions, JS).
-// You should insert the full HTML/JS from the previous final answer to complete the template.
-// I am now re-inserting the full content to make the code block complete.
-
-$fullHtmlTemplate = '
-        <div class="proxy-actions">
-            <a href="' . $tgUrl . '" class="action-btn connect-btn" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/></svg><span>Connect</span></a>
-            <button class="action-btn copy-btn" data-url="' . $tgUrl . '"><svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/></svg><svg class="icon-check" style="display:none;" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg><span>Copy</span></button>
-            <button class="action-btn qr-btn" data-url="' . $tgUrl . '"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 .5A.5.5 0 0 1 .5 0h3a.5.5 0 0 1 0 1H1v2.5a.5.5 0 0 1-1 0zM12 .5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0V1h-2.5a.5.5 0 0 1-.5-.5M.5 12a.5.5 0 0 1 .5.5V15h2.5a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1H15v-2.5a.5.5 0 0 1 .5-.5M4 4h1v1H4z"/><path d="M7 2H2v5h5zM3 3h3v3H3zm2 8.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m12-4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5M11 9h1v1h-1zM9 9h1v1H9zm4 4h1v1h-1zm-2 0h1v1h-1zm-2 0h1v1h-1zm4-2h1v1h-1zm-2 0h1v1h-1zm-2 0h1v1h-1zm2-2h1v1h-1zM9 11h1v1H9zm2-2H9v5h5V9h-2zM4 11h1v1H4zm-2 0h1v1H2zm-2 0h1v1H0z"/></svg><span>Show QR</span></button>
-        </div>
-';
-$htmlOutputContent = str_replace('<div class="proxy-actions"> ... </div>', $fullHtmlTemplate, $htmlOutputContent);
-
-$fullInstructionsAndFooter = '
-        <details class="instructions" style="margin-top:50px;"><summary>How to Connect</summary><div class="instructions-content"><p>Telegram MTProto proxies help bypass censorship. Here’s how to use them:</p><h3>Method 1: Direct Link (Desktop/Mobile)</h3><ol><li>Click the green "Connect" button.</li><li>Your browser will ask to open Telegram. Allow it.</li><li>Telegram will open and show a confirmation screen. Tap "Connect Proxy".</li></ol><h3>Method 2: QR Code (Best for Mobile)</h3><ol><li>Click the gray "Show QR" button. A QR code will appear.</li><li>On your phone, open Telegram and go to <strong>Settings > Data and Storage > Proxy Settings</strong>.</li><li>Tap "Add Proxy" and then tap the QR code icon to scan the code on your screen.</li></ol><h3>Method 3: Copy and Paste</h3><ol><li>Click the blue "Copy" button. The full <code>tg://</code> link is now in your clipboard.</li><li>In Telegram, go to <strong>Settings > Data and Storage > Proxy Settings</strong>.</li><li>Tap "Add Proxy" and paste the link.</li></ol></div></details>
-        <div class="footer"><p>Generated by a script. Not affiliated with Telegram.</p></div>
-        <div id="qr-modal"><div class="modal-content"><h3>Scan with Telegram</h3><div id="qrcode-container"></div></div></div>
-';
-$htmlOutputContent = str_replace('<!-- Instructions, Footer, Modal, and JavaScript (mostly unchanged) -->', $fullInstructionsAndFooter, $htmlOutputContent);
-
-$fullJs = '
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const proxyCards = Array.from(document.querySelectorAll(".proxy-card"));
-        if (proxyCards.length === 0) return;
-
-        const itemsPerPageSelect = document.getElementById("items-per-page-select");
-        const listStatus = document.getElementById("list-status");
-        const prevBtn = document.getElementById("prev-btn");
-        const nextBtn = document.getElementById("next-btn");
-
-        let currentPage = 1;
-        let itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
-        
-        function renderList() {
-            const totalItems = proxyCards.length;
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
-            currentPage = Math.max(1, Math.min(currentPage, totalPages)); 
-
-            proxyCards.forEach(card => card.classList.add("hidden"));
-
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paginatedCards = proxyCards.slice(start, end);
-            paginatedCards.forEach(card => card.classList.remove("hidden"));
-            
-            const startItem = totalItems > 0 ? start + 1 : 0;
-            const endItem = Math.min(end, totalItems);
-            listStatus.textContent = `Showing ${startItem}-${endItem} of ${totalItems}`;
-
-            prevBtn.disabled = currentPage === 1;
-            nextBtn.disabled = currentPage === totalPages || totalItems === 0;
-        }
-
-        itemsPerPageSelect.addEventListener("change", () => {
-            itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
-            currentPage = 1;
-            renderList();
-        });
-
-        prevBtn.addEventListener("click", () => {
-            if (currentPage > 1) {
-                currentPage--;
-                renderList();
-                window.scrollTo({ top: document.querySelector(".controls-bar").offsetTop - 20, behavior: "smooth" });
-            }
-        });
-
-        nextBtn.addEventListener("click", () => {
-            if (currentPage < Math.ceil(proxyCards.length / itemsPerPage)) {
-                currentPage++;
-                renderList();
-                window.scrollTo({ top: document.querySelector(".controls-bar").offsetTop - 20, behavior: "smooth" });
-            }
-        });
-
-        renderList();
-        
-        const copyButtons = document.querySelectorAll(".copy-btn");
-        copyButtons.forEach(button => {
-            const iconCopy = button.querySelector(".icon-copy");
-            const iconCheck = button.querySelector(".icon-check");
-            const buttonText = button.querySelector("span");
-            const originalText = buttonText.textContent;
-            
-            button.addEventListener("click", () => {
-                const urlToCopy = button.getAttribute("data-url");
-                navigator.clipboard.writeText(urlToCopy).then(() => {
-                    iconCopy.style.display = "none";
-                    iconCheck.style.display = "inline-block";
-                    buttonText.textContent = "Copied!";
-                    button.style.backgroundColor = "var(--success-color)";
-                    setTimeout(() => {
-                        iconCopy.style.display = "inline-block";
-                        iconCheck.style.display = "none";
-                        buttonText.textContent = originalText;
-                        button.style.backgroundColor = "";
-                    }, 2000);
-                });
-            });
-        });
-
-        const qrModal = document.getElementById("qr-modal");
-        const qrContainer = document.getElementById("qrcode-container");
-        document.querySelectorAll(".qr-btn").forEach(button => {
-            button.addEventListener("click", () => {
-                const url = button.getAttribute("data-url");
-                qrContainer.innerHTML = "";
-                new QRCode(qrContainer, { text: url, width: 220, height: 220 });
-                qrModal.classList.add("visible");
-            });
-        });
-        qrModal.addEventListener("click", e => { if (e.target === qrModal) qrModal.classList.remove("visible"); });
-    });
-</script>
-';
-$htmlOutputContent = str_replace('<script> ... </script>', $fullJs, $htmlOutputContent);
 
 if (file_put_contents($outputHtmlFile, $htmlOutputContent)) {
     echo "Successfully wrote new HTML output with live status to '$outputHtmlFile'\n";
