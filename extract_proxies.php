@@ -9,6 +9,7 @@ $proxyCheckTimeout = 2; // Seconds to wait for a proxy to respond.
 
 // --- Script Logic ---
 ob_start();
+date_default_timezone_set('Asia/Tehran'); // Set timezone to Tehran
 echo "--- Telegram Proxy Extractor v3.1 (Parallel) ---\n";
 
 // --- Phase 1: Read Input ---
@@ -26,7 +27,7 @@ $urlHandles = [];
 foreach ($usernames as $username) {
     if (!is_string($username) || empty(trim($username))) continue;
     $channelUrl = $telegramBaseUrl . urlencode(trim($username));
-    
+
     $ch = curl_init($channelUrl);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -51,13 +52,13 @@ $proxyRegex = '/(?:https?:\/\/t\.me\/proxy\?|tg:\/\/proxy\?)[^"\'\s]+/i';
 foreach ($urlHandles as $url => $ch) {
     $htmlContent = curl_multi_getcontent($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    
+
     if ($httpCode == 200 && $htmlContent) {
         if (preg_match_all($proxyRegex, $htmlContent, $matches)) {
             foreach ($matches[0] as $foundUrl) {
                 $parsedUrl = parse_url($foundUrl);
                 if (!$parsedUrl || !isset($parsedUrl['query'])) continue;
-                
+
                 $decodedQueryString = html_entity_decode($parsedUrl['query'], ENT_QUOTES | ENT_HTML5);
                 parse_str($decodedQueryString, $query);
 
@@ -82,7 +83,7 @@ function checkProxyStatus(string $server, int $port, int $timeout): array {
     $startTime = microtime(true);
     // Suppress warnings as we handle the error condition.
     $socket = @fsockopen("tcp://$server", $port, $errno, $errstr, $timeout);
-    
+
     if ($socket) {
         $latency = round((microtime(true) - $startTime) * 1000);
         fclose($socket);
@@ -192,8 +193,13 @@ $htmlOutputContent = '<!DOCTYPE html>
         #qr-modal { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; backdrop-filter: blur(5px); }
         #qr-modal.visible { opacity: 1; visibility: visible; }
         .modal-content { background-color: #fff; padding: 25px; border-radius: 16px; text-align: center; }
-        .footer { text-align: center; margin-top: 40px; font-size: 0.9em; color: var(--subtle-text-color); }
-        
+        .footer { text-align: center; margin-top: 40px; padding-top: 25px; font-size: 1em; color: var(--subtle-text-color); border-top: 1px solid var(--border-color); }
+        .footer p { margin-bottom: 15px; }
+        .social-icons { display: flex; justify-content: center; align-items: center; gap: 25px; }
+        .social-icons a { color: var(--subtle-text-color); text-decoration: none; transition: color 0.2s ease, transform 0.2s ease; display: inline-block; }
+        .social-icons a:hover { color: var(--primary-color); transform: translateY(-2px); }
+        .social-icons svg { width: 28px; height: 28px; }
+
         /* --- START: ROULETTE STYLES --- */
         .roulette-container { margin-top: 25px; margin-bottom: 10px; }
         #roulette-btn { padding: 12px 24px; font-size: 1.1rem; font-weight: 700; background-color: var(--primary-color); }
@@ -216,7 +222,7 @@ $htmlOutputContent = '<!DOCTYPE html>
     <div class="container">
         <header>
             <h1>Telegram Proxy List</h1>
-            <p>Found <strong>' . $proxyCount . '</strong> unique proxies. Last updated: ' . date('Y-m-d H:i:s') . ' UTC</p>
+            <p>Found <strong>' . $proxyCount . '</strong> unique proxies. Last updated: ' . date('Y-m-d H:i:s') . ' Tehran Time</p>
             
             <!-- START: ROULETTE BUTTON HTML -->
             <div class="roulette-container">
@@ -248,7 +254,7 @@ if ($proxyCount > 0) {
         $server = htmlspecialchars($proxy['server']);
         $port = htmlspecialchars($proxy['port']);
         $statusClass = strtolower($proxy['status']);
-        
+
         $htmlOutputContent .= '
             <div class="proxy-card ' . $statusClass . '">
                 <div class="proxy-details">
@@ -292,7 +298,19 @@ if ($proxyCount > 0) {
 $htmlOutputContent .= '
         <details class="instructions" style="margin-top:50px;"><summary>How to Connect</summary><div class="instructions-content"><p>Telegram MTProto proxies help bypass censorship. Here’s how to use them:</p><h3>Method 1: Direct Link (Desktop/Mobile)</h3><ol><li>Click the green "Connect" button.</li><li>Your browser will ask to open Telegram. Allow it.</li><li>Telegram will open and show a confirmation screen. Tap "Connect Proxy".</li></ol><h3>Method 2: QR Code (Best for Mobile)</h3><ol><li>Click the gray "Show QR" button. A QR code will appear.</li><li>On your phone, open Telegram and go to <strong>Settings > Data and Storage > Proxy Settings</strong>.</li><li>Tap "Add Proxy" and then tap the QR code icon to scan the code on your screen.</li></ol><h3>Method 3: Copy and Paste</h3><ol><li>Click the blue "Copy" button. The full <code>tg://</code> link is now in your clipboard.</li><li>In Telegram, go to <strong>Settings > Data and Storage > Proxy Settings</strong>.</li><li>Tap "Add Proxy" and paste the link.</li></ol></div></details>
         <details class="instructions" dir="rtl"><summary>راهنمای اتصال</summary><div class="instructions-content"> <p>پراکسی‌های MTProto تلگرام به عبور از محدودیت‌ها کمک می‌کنند:</p><h3>روش ۱: لینک مستقیم (دسکتاپ/موبایل)</h3><ol><li>روی دکمه سبز رنگ «Connect» کلیک کنید.</li><li>مرورگر شما اجازه باز کردن تلگرام را می‌خواهد. تایید کنید.</li><li>تلگرام باز شده و با نمایش صفحه تایید، روی «Connect Proxy» ضربه بزنید.</li></ol><h3>روش ۲: کد QR (بهترین روش برای موبایل)</h3><ol><li>روی دکمه خاکستری «Show QR» کلیک کنید تا کد QR نمایش داده شود.</li><li>در گوشی خود، به مسیر <strong>تنظیمات > داده و ذخیره‌سازی > تنظیمات پراکسی</strong> بروید.</li><li>گزینه «افزودن پراکسی» را زده و سپس روی آیکون کد QR ضربه بزنید تا کد را از روی صفحه اسکن کنید.</li></ol><h3>روش ۳: کپی و جای‌گذاری</h3><ol><li>روی دکمه آبی «Copy» کلیک کنید تا لینک کامل <code>tg://</code> در حافظه کپی شود.</li><li>در تلگرام، به <strong>تنظیمات > داده و ذخیره‌سازی > تنظیمات پراکسی</strong> بروید.</li><li>«افزودن پراکسی» را زده و لینک را جای‌گذاری کنید.</li></ol></div></details>
-        <div class="footer"><p>Generated by a script. Not affiliated with Telegram.</p></div>
+        
+        <div class="footer">
+            <p>made with ❤️ by YEBEKHE</p>
+            <div class="social-icons">
+                <a href="https://t.me/yebekhe" target="_blank" title="YEBEKHE on Telegram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-1.39.2-1.61l16.11-5.71c.78-.27 1.45.16 1.18 1.1l-2.53 11.92c-.33 1.51-1.23 1.84-2.24 1.13l-4.75-3.51-2.35 2.24c-.26.26-.48.47-.93.47z"/></svg>
+                </a>
+                <a href="https://twitter.com/yebekhe" target="_blank" title="YEBEKHE on Twitter">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </a>
+            </div>
+        </div>
+
     </div>
     <div id="qr-modal"><div class="modal-content"><h3>Scan with Telegram</h3><div id="qrcode-container"></div></div></div>
     <script>
