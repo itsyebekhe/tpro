@@ -152,7 +152,7 @@ $htmlOutputContent = '<!DOCTYPE html>
         header { text-align: center; margin-bottom: 20px; }
         header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
         header p { font-size: 1.1rem; color: var(--subtle-text-color); }
-        .proxy-card { background-color: var(--card-bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px var(--shadow-color); }
+        .proxy-card { background-color: var(--card-bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px var(--shadow-color); position: relative; transition: all 0.3s ease; }
         .proxy-card.offline { opacity: 0.6; border-left: 4px solid var(--danger-color); }
         .proxy-card.online { border-left: 4px solid var(--success-color); }
         .proxy-details { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 15px; margin-bottom: 20px; font-size: 0.9rem; }
@@ -193,6 +193,23 @@ $htmlOutputContent = '<!DOCTYPE html>
         #qr-modal.visible { opacity: 1; visibility: visible; }
         .modal-content { background-color: #fff; padding: 25px; border-radius: 16px; text-align: center; }
         .footer { text-align: center; margin-top: 40px; font-size: 0.9em; color: var(--subtle-text-color); }
+        
+        /* --- START: ROULETTE STYLES --- */
+        .roulette-container { margin-top: 25px; margin-bottom: 10px; }
+        #roulette-btn { padding: 12px 24px; font-size: 1.1rem; font-weight: 700; background-color: var(--primary-color); }
+        #roulette-btn:hover { background-color: var(--primary-hover-color); }
+        .proxy-card.highlighted {
+            box-shadow: 0 0 0 3px var(--primary-color), 0 8px 25px rgba(0, 123, 255, 0.3);
+            transform: scale(1.03);
+            z-index: 10;
+        }
+        @media (prefers-color-scheme: dark) {
+            .proxy-card.highlighted {
+                box-shadow: 0 0 0 3px var(--primary-color), 0 8px 25px rgba(13, 110, 253, 0.4);
+            }
+        }
+        /* --- END: ROULETTE STYLES --- */
+
     </style>
 </head>
 <body>
@@ -200,6 +217,16 @@ $htmlOutputContent = '<!DOCTYPE html>
         <header>
             <h1>Telegram Proxy List</h1>
             <p>Found <strong>' . $proxyCount . '</strong> unique proxies. Last updated: ' . date('Y-m-d H:i:s') . ' UTC</p>
+            
+            <!-- START: ROULETTE BUTTON HTML -->
+            <div class="roulette-container">
+                <button id="roulette-btn" class="action-btn connect-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.41,7.59a2,2,0,0,0-1.42-1.42,2,2,0,0,0-2.3,1L8.51,8.3A1.93,1.93,0,0,0,8,8.22a2,2,0,0,0-1.5,0l-.76.75a2,2,0,0,0-2.31,0,2,2,0,0,0,0,2.3L2.25,12.45a2,2,0,0,0,0,2.3,2,2,0,0,0,2.3,0l1.17-1.16a2,2,0,0,0,2.3,0,2,2,0,0,0,1.42-1.42,2,2,0,0,0-1-2.3L7.7,8.51a1.93,1.93,0,0,0,.28-.51,2,2,0,0,0,0-1.5l.75-.76a2,2,0,0,0,2.31,0,2,2,0,0,0,0-2.3L12.21,2.25a2,2,0,0,0-2.3,0,2,2,0,0,0,0,2.3L8.74,5.72a2,2,0,0,0,0,2.3,2,2,0,0,0,1.42,1.42,2,2,0,0,0,2.3-1Z"/><path d="M12.94,2a1,1,0,0,1,0,1.41L11,5.36a1,1,0,0,1-1.41-1.41L11.53,2A1,1,0,0,1,12.94,2ZM2,12.94a1,1,0,0,1,1.41,0l1.94,1.94a1,1,0,0,1-1.41,1.41L2,14.35A1,1,0,0,1,2,12.94ZM11.53,11a1,1,0,0,1,1.41,1.41L11,14.35a1,1,0,0,1-1.41-1.41ZM5.36,2,3.41,3.95A1,1,0,0,1,2,2.54L3.95,6A1,1,0,0,1,2.54,2Z"/></svg>
+                    <span>Try a Random Proxy</span>
+                </button>
+            </div>
+            <!-- END: ROULETTE BUTTON HTML -->
+
         </header>';
 
 if ($proxyCount > 0) {
@@ -346,6 +373,42 @@ $htmlOutputContent .= '
                 });
             });
             qrModal.addEventListener("click", e => { if (e.target === qrModal) qrModal.classList.remove("visible"); });
+
+            /* --- START: PROXY ROULETTE LOGIC --- */
+            const rouletteBtn = document.getElementById("roulette-btn");
+            if (rouletteBtn) {
+                rouletteBtn.addEventListener("click", () => {
+                    // 1. Find all available "online" proxy cards.
+                    const onlineCards = document.querySelectorAll(".proxy-card.online");
+                    if (onlineCards.length === 0) {
+                        alert("There are no online proxies available to choose from right now. Try again later!");
+                        return;
+                    }
+
+                    // 2. Remove any previous highlight.
+                    const currentlyHighlighted = document.querySelector(".proxy-card.highlighted");
+                    if (currentlyHighlighted) {
+                        currentlyHighlighted.classList.remove("highlighted");
+                    }
+
+                    // 3. Pick a random card from the online list.
+                    const randomIndex = Math.floor(Math.random() * onlineCards.length);
+                    const chosenCard = onlineCards[randomIndex];
+
+                    // 4. Highlight the chosen card and scroll to it.
+                    chosenCard.classList.add("highlighted");
+                    chosenCard.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                    });
+                    
+                    // 5. After a delay, remove the highlight for the next spin.
+                    setTimeout(() => {
+                        chosenCard.classList.remove("highlighted");
+                    }, 4000); // Highlight lasts for 4 seconds
+                });
+            }
+            /* --- END: PROXY ROULETTE LOGIC --- */
         });
     </script>
 </body>
