@@ -6,11 +6,30 @@ $outputHtmlFile = 'index.html';
 $outputJsonFile = 'extracted_proxies.json';
 $telegramBaseUrl = 'https://t.me/s/';
 $proxyCheckTimeout = 2; // Seconds to wait for a proxy to respond.
+$historyLength = 24; // << NEW: Number of past results to store for the stability sparkline.
 
 // --- Script Logic ---
 ob_start();
-date_default_timezone_set('Asia/Tehran'); // Set timezone to Tehran
-echo "--- Telegram Proxy Extractor v3.1 (Parallel) ---\n";
+date_default_timezone_set('Asia/Tehran');
+echo "--- Telegram Proxy Extractor v4.0 (Sparkline Edition) ---\n";
+
+// --- Phase 0: Read Previous Run's Data ---
+$indexedOldProxies = [];
+if (file_exists($outputJsonFile)) {
+    echo "Reading previous proxy data from '$outputJsonFile'...\n";
+    $oldJsonContent = file_get_contents($outputJsonFile);
+    $oldProxiesData = json_decode($oldJsonContent, true);
+    if (is_array($oldProxiesData)) {
+        foreach ($oldProxiesData as $proxy) {
+            // Index by tg_url for fast lookups
+            if (isset($proxy['tg_url'])) {
+                $indexedOldProxies[$proxy['tg_url']] = $proxy;
+            }
+        }
+        echo "Loaded history for " . count($indexedOldProxies) . " previous proxies.\n";
+    }
+}
+
 
 // --- Phase 1: Read Input ---
 if (!file_exists($inputJsonFile)) die("Error: Input JSON file not found at '$inputJsonFile'\n");
@@ -33,7 +52,7 @@ foreach ($usernames as $username) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_TIMEOUT => 30,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; PHP-Proxy-Extractor/3.1)'
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; PHP-Proxy-Extractor/4.0)'
     ]);
     curl_multi_add_handle($multiHandle, $ch);
     $urlHandles[$channelUrl] = $ch;
@@ -76,12 +95,11 @@ foreach ($urlHandles as $url => $ch) {
 }
 curl_multi_close($multiHandle);
 
-// --- Phase 4: De-duplicate and Check Proxy Status ---
+// --- Phase 4: De-duplicate, Check Proxy Status, and Update History ---
 echo "Fetch complete. Found " . count($allExtractedProxies) . " potential proxies. De-duplicating and checking status...\n";
 
 function checkProxyStatus(string $server, int $port, int $timeout): array {
     $startTime = microtime(true);
-    // Suppress warnings as we handle the error condition.
     $socket = @fsockopen("tcp://$server", $port, $errno, $errstr, $timeout);
 
     if ($socket) {
@@ -96,9 +114,19 @@ $uniqueProxies = [];
 foreach ($allExtractedProxies as $proxy) {
     $tgUrl = "tg://proxy?server={$proxy['server']}&port={$proxy['port']}&secret={$proxy['secret']}";
     if (!isset($uniqueProxies[$tgUrl])) {
-        $status = checkProxyStatus($proxy['server'], $proxy['port'], $proxyCheckTimeout);
-        $uniqueProxies[$tgUrl] = array_merge($proxy, $status, ['tg_url' => $tgUrl]);
-        echo " - Checked {$proxy['server']}:{$proxy['port']} -> {$status['status']}" . ($status['latency'] ? " ({$status['latency']}ms)" : "") . "\n";
+        $statusResult = checkProxyStatus($proxy['server'], $proxy['port'], $proxyCheckTimeout);
+
+        // --- NEW: History Logic ---
+        $history = $indexedOldProxies[$tgUrl]['history'] ?? [];
+        $newStatusBit = ($statusResult['status'] === 'Online') ? 1 : 0;
+        $history[] = $newStatusBit;
+        if (count($history) > $historyLength) {
+            $history = array_slice($history, -$historyLength);
+        }
+        // --- End History Logic ---
+
+        $uniqueProxies[$tgUrl] = array_merge($proxy, $statusResult, ['tg_url' => $tgUrl, 'history' => $history]);
+        echo " - Checked {$proxy['server']}:{$proxy['port']} -> {$statusResult['status']}" . ($statusResult['latency'] ? " ({$statusResult['latency']}ms)" : "") . " | History: " . count($history) . "/$historyLength\n";
     }
 }
 
@@ -153,10 +181,10 @@ $htmlOutputContent = '<!DOCTYPE html>
         header { text-align: center; margin-bottom: 20px; }
         header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
         header p { font-size: 1.1rem; color: var(--subtle-text-color); }
-        .proxy-card { background-color: var(--card-bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px var(--shadow-color); position: relative; transition: all 0.3s ease; }
+        .proxy-card { background-color: var(--card-bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px var(--shadow-color); position: relative; transition: all 0.3s ease; display: flex; flex-direction: column; gap: 15px; }
         .proxy-card.offline { opacity: 0.6; border-left: 4px solid var(--danger-color); }
         .proxy-card.online { border-left: 4px solid var(--success-color); }
-        .proxy-details { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 15px; margin-bottom: 20px; font-size: 0.9rem; }
+        .proxy-details { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 15px; font-size: 0.9rem; }
         .status-badge { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; }
         .status-badge.online { background-color: #28a74520; color: var(--success-color); }
         .status-badge.offline { background-color: #dc354520; color: var(--danger-color); }
@@ -165,10 +193,17 @@ $htmlOutputContent = '<!DOCTYPE html>
         .status-dot.offline { background-color: var(--danger-color); }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); } }
         .proxy-info { font-family: var(--font-mono); background-color: var(--bg-color); padding: 5px 10px; border-radius: 6px; word-break: break-all; }
-        .controls-bar { background-color: var(--card-bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between; margin-bottom: 25px; }
-        .controls-bar select { padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 1rem; }
-        .list-status { color: var(--subtle-text-color); font-size: 0.9rem; }
-        .proxy-list { display: grid; gap: 20px; } .proxy-card.hidden { display: none; }
+        
+        /* --- NEW: Sparkline Styles --- */
+        .proxy-stability { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; padding: 8px 0; border-top: 1px solid var(--border-color); margin-top: 10px; }
+        .sparkline-container { width: 100px; height: 25px; }
+        .sparkline-container svg { stroke: var(--primary-color); stroke-width: 2; fill: none; }
+        .uptime-text { font-weight: 500; }
+        .uptime-text.high { color: var(--success-color); }
+        .uptime-text.medium { color: #fdc500; }
+        .uptime-text.low { color: var(--danger-color); }
+        /* --- End Sparkline Styles --- */
+        
         .proxy-actions { display: flex; gap: 12px; flex-wrap: wrap; }
         .action-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; border: 1px solid transparent; font-size: 0.95rem; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s ease; flex-grow: 1; justify-content: center; }
         .action-btn svg { width: 16px; height: 16px; }
@@ -176,46 +211,22 @@ $htmlOutputContent = '<!DOCTYPE html>
         .copy-btn { background-color: var(--primary-color); color: white; } .copy-btn:hover { background-color: var(--primary-hover-color); }
         .qr-btn { background-color: var(--secondary-color); color: white; } .qr-btn:hover { background-color: var(--secondary-hover-color); }
         @media (min-width: 500px) { .action-btn { flex-grow: 0; } }
+        .controls-bar { background-color: var(--card-bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between; margin-bottom: 25px; }
+        .controls-bar select { padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); font-size: 1rem; }
+        .list-status { color: var(--subtle-text-color); font-size: 0.9rem; }
+        .proxy-list { display: grid; gap: 20px; } .proxy-card.hidden { display: none; }
         .pagination-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; }
         .pagination-btn { padding: 8px 16px; border: 1px solid var(--border-color); background-color: var(--card-bg-color); color: var(--primary-color); border-radius: 8px; cursor: pointer; }
         .pagination-btn:disabled { background-color: var(--bg-color); color: var(--subtle-text-color); cursor: not-allowed; }
-        .instructions { margin-top: 50px; background-color: var(--card-bg-color); border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.95rem; }
-        .instructions summary { font-size: 1.2rem; font-weight: 700; padding: 20px; cursor: pointer; outline: none; display: flex; justify-content: space-between; align-items: center; }
-        .instructions summary::after { content: "+"; font-size: 1.5rem; transition: transform 0.2s ease; }
-        .instructions[open] summary::after { transform: rotate(45deg); }
-        .instructions-content { padding: 0 20px 20px; border-top: 1px solid var(--border-color); }
-        .instructions-content h3 { margin-top: 25px; margin-bottom: 10px; }
-        .instructions-content ol { padding-left: 20px; }
-        .instructions-content code { background-color: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); }
-        [dir="rtl"] { font-family: var(--font-rtl); text-align: right; }
-        [dir="rtl"] .instructions summary { flex-direction: row-reverse; }
-        [dir="rtl"] .instructions-content ol { padding-left: 0; padding-right: 20px; }
-        #qr-modal { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; backdrop-filter: blur(5px); }
-        #qr-modal.visible { opacity: 1; visibility: visible; }
-        .modal-content { background-color: #fff; padding: 25px; border-radius: 16px; text-align: center; }
         .footer { text-align: center; margin-top: 40px; padding-top: 25px; font-size: 1em; color: var(--subtle-text-color); border-top: 1px solid var(--border-color); }
         .footer p { margin-bottom: 15px; }
         .social-icons { display: flex; justify-content: center; align-items: center; gap: 25px; }
         .social-icons a { color: var(--subtle-text-color); text-decoration: none; transition: color 0.2s ease, transform 0.2s ease; display: inline-block; }
         .social-icons a:hover { color: var(--primary-color); transform: translateY(-2px); }
         .social-icons svg { width: 28px; height: 28px; }
-
-        /* --- START: ROULETTE STYLES --- */
-        .roulette-container { margin-top: 25px; margin-bottom: 10px; }
-        #roulette-btn { padding: 12px 24px; font-size: 1.1rem; font-weight: 700; background-color: var(--primary-color); }
-        #roulette-btn:hover { background-color: var(--primary-hover-color); }
-        .proxy-card.highlighted {
-            box-shadow: 0 0 0 3px var(--primary-color), 0 8px 25px rgba(0, 123, 255, 0.3);
-            transform: scale(1.03);
-            z-index: 10;
-        }
-        @media (prefers-color-scheme: dark) {
-            .proxy-card.highlighted {
-                box-shadow: 0 0 0 3px var(--primary-color), 0 8px 25px rgba(13, 110, 253, 0.4);
-            }
-        }
-        /* --- END: ROULETTE STYLES --- */
-
+        #qr-modal { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; backdrop-filter: blur(5px); }
+        #qr-modal.visible { opacity: 1; visibility: visible; }
+        .modal-content { background-color: #fff; padding: 25px; border-radius: 16px; text-align: center; }
     </style>
 </head>
 <body>
@@ -223,16 +234,6 @@ $htmlOutputContent = '<!DOCTYPE html>
         <header>
             <h1>Telegram Proxy List</h1>
             <p>Found <strong>' . $proxyCount . '</strong> unique proxies. Last updated: ' . date('Y-m-d H:i:s') . ' Tehran Time</p>
-            
-            <!-- START: ROULETTE BUTTON HTML -->
-            <div class="roulette-container">
-                <button id="roulette-btn" class="action-btn connect-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.41,7.59a2,2,0,0,0-1.42-1.42,2,2,0,0,0-2.3,1L8.51,8.3A1.93,1.93,0,0,0,8,8.22a2,2,0,0,0-1.5,0l-.76.75a2,2,0,0,0-2.31,0,2,2,0,0,0,0,2.3L2.25,12.45a2,2,0,0,0,0,2.3,2,2,0,0,0,2.3,0l1.17-1.16a2,2,0,0,0,2.3,0,2,2,0,0,0,1.42-1.42,2,2,0,0,0-1-2.3L7.7,8.51a1.93,1.93,0,0,0,.28-.51,2,2,0,0,0,0-1.5l.75-.76a2,2,0,0,0,2.31,0,2,2,0,0,0,0-2.3L12.21,2.25a2,2,0,0,0-2.3,0,2,2,0,0,0,0,2.3L8.74,5.72a2,2,0,0,0,0,2.3,2,2,0,0,0,1.42,1.42,2,2,0,0,0,2.3-1Z"/><path d="M12.94,2a1,1,0,0,1,0,1.41L11,5.36a1,1,0,0,1-1.41-1.41L11.53,2A1,1,0,0,1,12.94,2ZM2,12.94a1,1,0,0,1,1.41,0l1.94,1.94a1,1,0,0,1-1.41,1.41L2,14.35A1,1,0,0,1,2,12.94ZM11.53,11a1,1,0,0,1,1.41,1.41L11,14.35a1,1,0,0,1-1.41-1.41ZM5.36,2,3.41,3.95A1,1,0,0,1,2,2.54L3.95,6A1,1,0,0,1,2.54,2Z"/></svg>
-                    <span>Try a Random Proxy</span>
-                </button>
-            </div>
-            <!-- END: ROULETTE BUTTON HTML -->
-
         </header>';
 
 if ($proxyCount > 0) {
@@ -254,6 +255,19 @@ if ($proxyCount > 0) {
         $server = htmlspecialchars($proxy['server']);
         $port = htmlspecialchars($proxy['port']);
         $statusClass = strtolower($proxy['status']);
+        
+        // --- NEW: Calculate Uptime ---
+        $history = $proxy['history'] ?? [];
+        $uptime = 0;
+        $uptimeClass = 'low';
+        if (!empty($history)) {
+            $onlineCount = array_sum($history);
+            $uptime = round(($onlineCount / count($history)) * 100);
+            if ($uptime > 90) $uptimeClass = 'high';
+            elseif ($uptime > 70) $uptimeClass = 'medium';
+        }
+        $historyJson = htmlspecialchars(json_encode($history), ENT_QUOTES, 'UTF-8');
+        // --- End Uptime Calculation ---
 
         $htmlOutputContent .= '
             <div class="proxy-card ' . $statusClass . '">
@@ -268,9 +282,17 @@ if ($proxyCount > 0) {
         }
         $htmlOutputContent .= '
                 </div>
+
+                <!-- NEW: Stability Sparkline Section -->
+                <div class="proxy-stability">
+                    <span class="sparkline-container" data-history="' . $historyJson . '"></span>
+                    <span class="uptime-text ' . $uptimeClass . '">' . $uptime . '% Uptime</span>
+                </div>
+                <!-- End Stability Section -->
+
                 <div class="proxy-actions">
                     <a href="' . $tgUrl . '" class="action-btn connect-btn" target="_blank">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/></svg>
+                       <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/></svg>
                         <span>Connect</span>
                     </a>
                     <button class="action-btn copy-btn" data-url="' . $tgUrl . '">
@@ -296,9 +318,6 @@ if ($proxyCount > 0) {
 }
 
 $htmlOutputContent .= '
-        <details class="instructions" style="margin-top:50px;"><summary>How to Connect</summary><div class="instructions-content"><p>Telegram MTProto proxies help bypass censorship. Here’s how to use them:</p><h3>Method 1: Direct Link (Desktop/Mobile)</h3><ol><li>Click the green "Connect" button.</li><li>Your browser will ask to open Telegram. Allow it.</li><li>Telegram will open and show a confirmation screen. Tap "Connect Proxy".</li></ol><h3>Method 2: QR Code (Best for Mobile)</h3><ol><li>Click the gray "Show QR" button. A QR code will appear.</li><li>On your phone, open Telegram and go to <strong>Settings > Data and Storage > Proxy Settings</strong>.</li><li>Tap "Add Proxy" and then tap the QR code icon to scan the code on your screen.</li></ol><h3>Method 3: Copy and Paste</h3><ol><li>Click the blue "Copy" button. The full <code>tg://</code> link is now in your clipboard.</li><li>In Telegram, go to <strong>Settings > Data and Storage > Proxy Settings</strong>.</li><li>Tap "Add Proxy" and paste the link.</li></ol></div></details>
-        <details class="instructions" dir="rtl"><summary>راهنمای اتصال</summary><div class="instructions-content"> <p>پراکسی‌های MTProto تلگرام به عبور از محدودیت‌ها کمک می‌کنند:</p><h3>روش ۱: لینک مستقیم (دسکتاپ/موبایل)</h3><ol><li>روی دکمه سبز رنگ «Connect» کلیک کنید.</li><li>مرورگر شما اجازه باز کردن تلگرام را می‌خواهد. تایید کنید.</li><li>تلگرام باز شده و با نمایش صفحه تایید، روی «Connect Proxy» ضربه بزنید.</li></ol><h3>روش ۲: کد QR (بهترین روش برای موبایل)</h3><ol><li>روی دکمه خاکستری «Show QR» کلیک کنید تا کد QR نمایش داده شود.</li><li>در گوشی خود، به مسیر <strong>تنظیمات > داده و ذخیره‌سازی > تنظیمات پراکسی</strong> بروید.</li><li>گزینه «افزودن پراکسی» را زده و سپس روی آیکون کد QR ضربه بزنید تا کد را از روی صفحه اسکن کنید.</li></ol><h3>روش ۳: کپی و جای‌گذاری</h3><ol><li>روی دکمه آبی «Copy» کلیک کنید تا لینک کامل <code>tg://</code> در حافظه کپی شود.</li><li>در تلگرام، به <strong>تنظیمات > داده و ذخیره‌سازی > تنظیمات پراکسی</strong> بروید.</li><li>«افزودن پراکسی» را زده و لینک را جای‌گذاری کنید.</li></ol></div></details>
-        
         <div class="footer">
             <p>made with ❤️ by YEBEKHE</p>
             <div class="social-icons">
@@ -392,41 +411,47 @@ $htmlOutputContent .= '
             });
             qrModal.addEventListener("click", e => { if (e.target === qrModal) qrModal.classList.remove("visible"); });
 
-            /* --- START: PROXY ROULETTE LOGIC --- */
-            const rouletteBtn = document.getElementById("roulette-btn");
-            if (rouletteBtn) {
-                rouletteBtn.addEventListener("click", () => {
-                    // 1. Find all available "online" proxy cards.
-                    const onlineCards = document.querySelectorAll(".proxy-card.online:not(.hidden)");
-                    if (onlineCards.length === 0) {
-                        alert("There are no online proxies available to choose from right now. Try again later!");
-                        return;
-                    }
+            /* --- NEW: Sparkline Generation Logic --- */
+            function createSparkline(history) {
+                if (!history || history.length < 2) return null;
+                
+                const svgNS = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(svgNS, "svg");
+                const width = 100;
+                const height = 25;
+                const padding = 4;
+                svg.setAttribute("width", width);
+                svg.setAttribute("height", height);
+                svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 
-                    // 2. Remove any previous highlight.
-                    const currentlyHighlighted = document.querySelector(".proxy-card.highlighted");
-                    if (currentlyHighlighted) {
-                        currentlyHighlighted.classList.remove("highlighted");
-                    }
-
-                    // 3. Pick a random card from the online list.
-                    const randomIndex = Math.floor(Math.random() * onlineCards.length);
-                    const chosenCard = onlineCards[randomIndex];
-
-                    // 4. Highlight the chosen card and scroll to it.
-                    chosenCard.classList.add("highlighted");
-                    chosenCard.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center"
-                    });
-                    
-                    // 5. After a delay, remove the highlight for the next spin.
-                    setTimeout(() => {
-                        chosenCard.classList.remove("highlighted");
-                    }, 4000); // Highlight lasts for 4 seconds
+                const polyline = document.createElementNS(svgNS, "polyline");
+                
+                let points = "";
+                const xStep = width / (history.length - 1);
+                
+                history.forEach((status, i) => {
+                    const x = i * xStep;
+                    const y = status === 1 ? padding : height - padding;
+                    points += `${x},${y} `;
                 });
+                
+                polyline.setAttribute("points", points.trim());
+                svg.appendChild(polyline);
+                return svg;
             }
-            /* --- END: PROXY ROULETTE LOGIC --- */
+
+            document.querySelectorAll(".sparkline-container").forEach(container => {
+                try {
+                    const history = JSON.parse(container.getAttribute("data-history"));
+                    const sparklineSvg = createSparkline(history);
+                    if (sparklineSvg) {
+                        container.appendChild(sparklineSvg);
+                    }
+                } catch (e) {
+                    console.error("Could not parse sparkline history:", e);
+                }
+            });
+            /* --- End Sparkline Logic --- */
         });
     </script>
 </body>
