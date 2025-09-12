@@ -5,7 +5,7 @@ $inputJsonFile = 'usernames.json';
 $outputHtmlFile = 'index.html';
 $outputJsonFile = 'extracted_proxies.json';
 $telegramBaseUrl = 'https://t.me/s/';
-$proxyCheckTimeout = 2; // Seconds to wait for a proxy to respond.
+$proxyCheckTimeout = 20; // Seconds to wait for a proxy to respond.
 $historyLength = 24; // << NEW: Number of past results to store for the stability sparkline.
 
 // --- Script Logic ---
