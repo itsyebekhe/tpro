@@ -3,14 +3,10 @@
 // --- Configuration ---
 $inputJsonFile = 'usernames.json';
 $outputHtmlFile = 'index.html';
-
-// This is the RAW list of proxies we find for the Python script to use
-$rawOutputJsonFile = 'extracted_proxies.json'; 
-
-// This is the FINAL list, verified by Python, that we will display on the webpage
-$verifiedInputJsonFile = 'verified_proxies.json';
-
+$outputJsonFile = 'extracted_proxies.json';
 $telegramBaseUrl = 'https://t.me/s/';
+$proxyCheckTimeout = 10; // Server-side check timeout.
+
 $userAgents = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
@@ -19,13 +15,13 @@ $userAgents = [
 // --- Script Logic ---
 ob_start();
 date_default_timezone_set('Asia/Tehran');
-echo "--- Telegram Proxy Harvester v7.0 (PHP + Python Pipeline) ---\n";
-echo "--- STAGE 1: Finding potential proxies with PHP ---\n";
+echo "--- Telegram Proxy Extractor v6.0 (Hybrid Check Edition) ---\n";
 
 // --- Phase 1: Read Input ---
 if (!file_exists($inputJsonFile)) die("Error: Input JSON file not found at '$inputJsonFile'\n");
 $jsonContent = file_get_contents($inputJsonFile);
 $usernames = json_decode($jsonContent, true);
+if ($usernames === null) die("Error: Could not decode JSON. Details: " . json_last_error_msg() . "\n");
 
 echo "Read " . count($usernames) . " usernames. Starting parallel fetch...\n";
 
@@ -38,12 +34,13 @@ foreach ($usernames as $username) {
     $ch = curl_init($channelUrl);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_TIMEOUT => 30, CURLOPT_USERAGENT => $userAgents[array_rand($userAgents)]]);
     curl_multi_add_handle($multiHandle, $ch);
+    $urlHandles[$channelUrl] = $ch;
 }
 $running = null;
 do { curl_multi_exec($multiHandle, $running); curl_multi_select($multiHandle); } while ($running > 0);
 
-// --- Phase 3: Extract and De-duplicate Proxies ---
-$uniqueProxies = [];
+// --- Phase 3: Process Results and Extract Proxies ---
+$allExtractedProxies = [];
 $proxyRegex = '/(?:https?:\/\/t\.me\/proxy\?|tg:\/\/proxy\?)[^"\'\s]+/i';
 foreach ($urlHandles as $url => $ch) {
     $htmlContent = curl_multi_getcontent($ch);
@@ -53,11 +50,7 @@ foreach ($urlHandles as $url => $ch) {
             if (!$parsedUrl || !isset($parsedUrl['query'])) continue;
             parse_str(html_entity_decode($parsedUrl['query']), $query);
             if (isset($query['server'], $query['port'], $query['secret'])) {
-                $proxy = ['server' => trim($query['server']), 'port' => (int)trim($query['port']), 'secret' => trim($query['secret'])];
-                $tgUrl = "tg://proxy?server={$proxy['server']}&port={$proxy['port']}&secret={$proxy['secret']}";
-                if (!isset($uniqueProxies[$tgUrl])) {
-                    $uniqueProxies[$tgUrl] = array_merge($proxy, ['tg_url' => $tgUrl]);
-                }
+                $allExtractedProxies[] = ['server' => trim($query['server']), 'port' => (int)trim($query['port']), 'secret' => trim($query['secret'])];
             }
         }
     }
@@ -65,37 +58,71 @@ foreach ($urlHandles as $url => $ch) {
 }
 curl_multi_close($multiHandle);
 
-$finalProxyList = array_values($uniqueProxies);
-$proxyCount = count($finalProxyList);
-echo "Fetch complete. Found $proxyCount unique potential proxies.\n";
-
-// --- Phase 4: Save Raw List for Python Verifier ---
-$jsonOutputContent = json_encode($finalProxyList, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-file_put_contents($rawOutputJsonFile, $jsonOutputContent);
-echo "Successfully wrote $proxyCount raw proxies to '$rawOutputJsonFile' for the Python script to use.\n";
-
-// --- STAGE 2: Generating the Dashboard from Python's verified list ---\n";
-echo "\n--- STAGE 2: Generating dashboard from verified list ---\n";
-$proxiesForDashboard = [];
-if (file_exists($verifiedInputJsonFile)) {
-    $verifiedContent = file_get_contents($verifiedInputJsonFile);
-    $proxiesForDashboard = json_decode($verifiedContent, true);
-    if (!is_array($proxiesForDashboard)) {
-        $proxiesForDashboard = [];
-        echo "[WARN] Could not read the verified proxy file '$verifiedInputJsonFile'. Dashboard may be empty.\n";
-    } else {
-        echo "Successfully loaded " . count($proxiesForDashboard) . " proxies from the verified list.\n";
-    }
-} else {
-    echo "[INFO] Verified proxy file '$verifiedInputJsonFile' not found. Run the Python verifier script.\n";
-    echo "[INFO] The dashboard will be generated using the raw, unverified list as a fallback.\n";
-    // Fallback to the unverified list if the verified one doesn't exist yet
-    foreach($finalProxyList as &$proxy) {
-        $proxy['status'] = 'Unknown';
-        $proxy['latency'] = null;
-    }
-    $proxiesForDashboard = $finalProxyList;
+// --- Phase 4: RE-INTRODUCED Server-Side Parallel Pre-Check ---
+echo "Fetch complete. Found " . count($allExtractedProxies) . " potential proxies. Performing server-side pre-check...\n";
+$uniqueRawProxies = [];
+foreach ($allExtractedProxies as $proxy) {
+    $key = "{$proxy['server']}:{$proxy['port']}";
+    if (!isset($uniqueRawProxies[$key])) $uniqueRawProxies[$key] = $proxy;
 }
+$proxiesToCheck = array_values($uniqueRawProxies);
+$totalToCheck = count($proxiesToCheck);
+$checkedCount = 0;
+$uniqueProxies = [];
+$sockets = [];
+$proxyDataMap = [];
+$startTimeMap = [];
+$write = $except = null;
+
+foreach ($proxiesToCheck as $index => $proxy) {
+    $socket = @stream_socket_client("tcp://{$proxy['server']}:{$proxy['port']}", $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT);
+    if ($socket) {
+        $sockets[$index] = $socket;
+        $proxyDataMap[$index] = $proxy;
+        $startTimeMap[$index] = microtime(true);
+    } else {
+        $tgUrl = "tg://proxy?server={$proxy['server']}&port={$proxy['port']}&secret={$proxy['secret']}";
+        $uniqueProxies[$tgUrl] = array_merge($proxy, ['status' => 'Offline', 'latency' => null, 'tg_url' => $tgUrl]);
+    }
+}
+
+$globalStartTime = microtime(true);
+while (!empty($sockets) && (microtime(true) - $globalStartTime) < $proxyCheckTimeout) {
+    $read = $sockets;
+    if (stream_select($read, $write, $except, 1) > 0) {
+        foreach ($read as $index => $socket) {
+            $latency = round((microtime(true) - $startTimeMap[$index]) * 1000);
+            $proxy = $proxyDataMap[$index];
+            $tgUrl = "tg://proxy?server={$proxy['server']}&port={$proxy['port']}&secret={$proxy['secret']}";
+            $uniqueProxies[$tgUrl] = array_merge($proxy, ['status' => 'Online', 'latency' => $latency, 'tg_url' => $tgUrl]);
+            fclose($socket);
+            unset($sockets[$index]);
+        }
+    }
+}
+// Any remaining sockets are offline
+foreach ($sockets as $index => $socket) {
+    $proxy = $proxyDataMap[$index];
+    $tgUrl = "tg://proxy?server={$proxy['server']}&port={$proxy['port']}&secret={$proxy['secret']}";
+    $uniqueProxies[$tgUrl] = array_merge($proxy, ['status' => 'Offline', 'latency' => null, 'tg_url' => $tgUrl]);
+    fclose($socket);
+}
+$proxiesWithStatus = array_values($uniqueProxies);
+$proxyCount = count($proxiesWithStatus);
+
+// --- Phase 5: Sort Proxies by Server-Side Result ---
+usort($proxiesWithStatus, function ($a, $b) {
+    if ($a['status'] === 'Online' && $b['status'] === 'Offline') return -1;
+    if ($a['status'] === 'Offline' && $b['status'] === 'Online') return 1;
+    if ($a['status'] === 'Online' && $b['status'] === 'Online') return $a['latency'] <=> $b['latency'];
+    return 0;
+});
+echo "Server-side check finished. Found " . count(array_filter($proxiesWithStatus, fn($p) => $p['status'] === 'Online')) . " online proxies.\n";
+
+// --- Phase 6: Generate Outputs ---
+$jsonOutputContent = json_encode($proxiesWithStatus, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+file_put_contents($outputJsonFile, $jsonOutputContent);
+echo "Successfully wrote $proxyCount proxies with initial status to '$outputJsonFile'\n";
 
 function renderTemplate(string $templateFile, array $data): string {
     if (!file_exists($templateFile)) return "Error: Template file '$templateFile' not found.";
@@ -106,11 +133,11 @@ function renderTemplate(string $templateFile, array $data): string {
 }
 
 $htmlOutputContent = renderTemplate('template.phtml', [
-    'proxies' => $proxiesForDashboard,
-    'proxyCount' => count($proxiesForDashboard),
+    'proxies' => $proxiesWithStatus,
+    'proxyCount' => $proxyCount,
 ]);
 file_put_contents($outputHtmlFile, $htmlOutputContent);
-echo "Successfully generated '$outputHtmlFile'.\n";
+echo "Successfully wrote hybrid HTML output to '$outputHtmlFile'\n";
 
 $consoleOutput = ob_get_clean();
 echo $consoleOutput;
