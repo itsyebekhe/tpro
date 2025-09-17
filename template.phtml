@@ -50,44 +50,42 @@
                     $port = htmlspecialchars($proxy['port']);
                     $isOnline = $proxy['status'] === 'Online';
                 ?>
-                <div class="proxy-card bg-white dark:bg-gray-800 rounded-xl shadow-md border dark:border-gray-700 flex flex-col gap-3 p-3 md:p-4 hover:shadow-lg hover:border-blue-500/50 transition-all duration-300 <?= !$isOnline ? 'opacity-60 grayscale' : '' ?> <?= $isOnline ? 'is-online border-gray-200' : 'border-transparent' ?>" 
+                <div class="proxy-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden flex flex-col md:flex-row transition-all duration-300 border-l-4 <?= $isOnline ? 'is-online border-green-500' : 'border-red-500' ?> <?= !$isOnline ? 'opacity-60' : '' ?>" 
                      data-server="<?= $server ?>" data-port="<?= $port ?>" data-url="<?= $tgUrl ?>" data-latency="<?= $proxy['latency'] ?? '99999' ?>">
                     
-                    <!-- Top Section: Status & Server Info -->
-                    <div class="flex justify-between items-center gap-3">
-                        <span class="status-badge inline-flex items-center space-x-2 px-3 py-1 text-xs font-bold rounded-full <?= $isOnline ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300' ?>">
-                            <?= $proxy['status'] ?>
-                        </span>
-                        <div class="font-mono text-sm text-gray-700 dark:text-gray-300 text-right truncate">
-                           <strong class="text-gray-900 dark:text-gray-100"><?= $server ?></strong>:<?= $port ?>
+                    <!-- Left Column: Status & Ping -->
+                    <div class="status-column w-full md:w-40 flex-shrink-0 p-4 text-center flex flex-row md:flex-col items-center justify-between md:justify-center gap-4 <?= $isOnline ? 'bg-green-50/50 dark:bg-green-500/10' : 'bg-red-50/50 dark:bg-red-500/10' ?>">
+                        <div class="status-badge">
+                            <div class="text-sm font-bold uppercase tracking-wider <?= $isOnline ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400' ?>"><?= $proxy['status'] ?></div>
                         </div>
-                    </div>
-
-                    <!-- Divider -->
-                    <hr class="border-gray-200 dark:border-gray-700/50">
-
-                    <!-- Middle Section: Latency -->
-                    <div class="flex justify-between items-center h-8">
-                        <div class="text-sm font-semibold text-gray-500 dark:text-gray-400">Connection Speed</div>
-                        <div class="ping-display text-right">
-                             <?php if ($isOnline): ?>
-                                <div class="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100">
-                                    <span class="ping-value"><?= $proxy['latency'] ?></span><span class="text-sm font-medium">ms</span>
-                                </div>
-                                <div class="ping-source text-xs text-gray-400">from server</div>
+                        <div class="ping-display">
+                            <?php if ($isOnline): ?>
+                                <div class="text-3xl font-bold text-gray-800 dark:text-gray-100"><span class="ping-value"><?= $proxy['latency'] ?></span><span class="text-xl">ms</span></div>
+                                <div class="ping-source text-xs text-gray-500 dark:text-gray-400">from server</div>
                             <?php else: ?>
-                                <div class="text-lg md:text-xl font-bold text-gray-400 dark:text-gray-600">--</div>
+                                <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">--</div>
                             <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Bottom Section: Actions -->
-                    <div class="proxy-actions flex gap-2 pt-1">
-                        <a href="<?= $tgUrl ?>" class="action-btn connect-btn flex-1 text-center px-3 py-2 rounded-md text-white text-sm font-semibold flex items-center justify-center gap-1.5 <?= $isOnline ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' ?> transition-colors">Connect</a>
-                        <button class="action-btn copy-btn flex-1 text-center px-3 py-2 rounded-md text-white text-sm font-semibold flex items-center justify-center gap-1.5 bg-blue-500 hover:bg-blue-600 transition-colors">Copy</button>
-                        <button class="action-btn qr-btn flex-none p-2 rounded-md text-white text-sm font-semibold bg-gray-500 hover:bg-gray-600 transition-colors">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2.5 2.5a.5.5 0 01.5-.5h2.5a.5.5 0 010 1H3V5a.5.5 0 01-1 0V2.5zM17.5 2.5a.5.5 0 00-.5-.5h-2.5a.5.5 0 000 1H17V5a.5.5 0 001 0V2.5zM2.5 17.5a.5.5 0 00.5.5h2.5a.5.5 0 000-1H3V15a.5.5 0 00-1 0v2.5zM17.5 17.5a.5.5 0 01-.5.5h-2.5a.5.5 0 010-1H17V15a.5.5 0 011 0v2.5z"></path><path fill-rule="evenodd" d="M5 5h10v10H5V5zm1-1a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1H6z"></path><path d="M8 8h4v4H8V8z"></path></svg>
-                        </button>
+                    <!-- Right Column: Details & Actions -->
+                    <div class="details-column flex-grow p-4 flex flex-col justify-between">
+                        <div class="font-mono text-sm bg-gray-100 dark:bg-gray-700/50 p-2 rounded-md mb-4 text-center md:text-left break-all">
+                           <strong><?= $server ?></strong>:<?= $port ?>
+                        </div>
+                        <div class="proxy-actions flex gap-2 justify-center md:justify-start">
+                             <a href="<?= $tgUrl ?>" class="action-btn connect-btn flex-1 md:flex-none text-center px-4 py-2 rounded-md text-white text-sm font-semibold flex items-center justify-center gap-1.5 <?= $isOnline ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' ?> transition-colors">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086L2.279 16.76a.75.75 0 00.95.826l16-5.333a.75.75 0 000-1.418l-16-5.333z"></path></svg>
+                                <span>Connect</span>
+                            </a>
+                            <button class="action-btn copy-btn flex-1 md:flex-none text-center px-4 py-2 rounded-md text-white text-sm font-semibold flex items-center justify-center gap-1.5 bg-blue-500 hover:bg-blue-600 transition-colors">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3.5A1.5 1.5 0 018.5 2h5.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 01.439 1.062V12.5A1.5 1.5 0 0116.5 14h-1a.5.5 0 000 1h1a3 3 0 003-3V5.621a3 3 0 00-.879-2.121l-2.12-2.122A3 3 0 0014.379 0H8.5A3 3 0 005.5 3v1.5a.5.5 0 001 0V3.5z"></path><path d="M3.5 6A1.5 1.5 0 002 7.5v10A1.5 1.5 0 003.5 19h8a1.5 1.5 0 001.5-1.5v-10A1.5 1.5 0 0011.5 6h-8zM8 14a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+                                <span>Copy</span>
+                            </button>
+                            <button class="action-btn qr-btn flex-none p-2 rounded-md text-white text-sm font-semibold bg-gray-500 hover:bg-gray-600 transition-colors">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2.5 2.5a.5.5 0 01.5-.5h2.5a.5.5 0 010 1H3V5a.5.5 0 01-1 0V2.5zM17.5 2.5a.5.5 0 00-.5-.5h-2.5a.5.5 0 000 1H17V5a.5.5 0 001 0V2.5zM2.5 17.5a.5.5 0 00.5.5h2.5a.5.5 0 000-1H3V15a.5.5 0 00-1 0v2.5zM17.5 17.5a.5.5 0 01-.5.5h-2.5a.5.5 0 010-1H17V15a.5.5 0 011 0v2.5z"></path><path fill-rule="evenodd" d="M5 5h10v10H5V5zm1-1a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1H6z"></path><path d="M8 8h4v4H8V8z"></path></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -123,15 +121,15 @@
         
         function setCardToSkeleton(card) {
             const pingDisplay = card.querySelector('.ping-display');
-            if (pingDisplay) pingDisplay.innerHTML = `<div class="h-5 w-16 ml-auto rounded-md animate-shimmer"></div><div class="h-3 w-10 ml-auto mt-1 rounded-md animate-shimmer"></div>`;
+            if (pingDisplay) pingDisplay.innerHTML = `<div class="h-8 w-20 mx-auto rounded-md animate-shimmer"></div><div class="h-3 w-12 mx-auto mt-1 rounded-md animate-shimmer"></div>`;
         }
 
         function updateCardLatency(card, latency) {
             const pingDisplay = card.querySelector('.ping-display');
             card.dataset.latency = latency;
             pingDisplay.innerHTML = `
-                <div class="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100">
-                    <span class="ping-value">${Math.round(latency)}</span><span class="text-sm font-medium">ms</span>
+                <div class="text-3xl font-bold text-gray-800 dark:text-gray-100">
+                    <span class="ping-value">${Math.round(latency)}</span><span class="text-xl">ms</span>
                 </div>
                 <div class="ping-source text-xs text-blue-500 font-semibold">from you</div>`;
         }
@@ -151,12 +149,10 @@
                 listStatus.textContent = "No online proxies to test.";
                 return;
             }
-
             recheckBtn.disabled = true;
             recheckBtnText.textContent = "Testing...";
             progressContainer.classList.remove('hidden');
             progressBar.style.width = '0%';
-
             onlineCards.forEach(setCardToSkeleton);
             
             let checkedCount = 0;
@@ -169,7 +165,6 @@
             });
 
             await Promise.all(promises);
-
             listStatus.textContent = "Sorting results by speed...";
             sortCards();
             setTimeout(() => {
@@ -189,10 +184,10 @@
             const copyBtn = e.target.closest('.copy-btn');
             if(copyBtn) {
                 navigator.clipboard.writeText(copyBtn.closest('.proxy-card').dataset.url);
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Copied!';
+                const originalContent = copyBtn.innerHTML;
+                copyBtn.innerHTML = 'Copied!';
                 copyBtn.classList.add('!bg-green-500');
-                setTimeout(() => { copyBtn.textContent = originalText; copyBtn.classList.remove('!bg-green-500'); }, 1500);
+                setTimeout(() => { copyBtn.innerHTML = originalContent; copyBtn.classList.remove('!bg-green-500'); }, 1500);
             }
             const qrBtn = e.target.closest('.qr-btn');
             if(qrBtn) {
