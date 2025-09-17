@@ -3,288 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Proxy List</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    
-    <!-- TAILWIND CSS CDN -->
+    <title>Telegram Proxy List - Live Status</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Configuration for custom colors/fonts if needed (optional) -->
-    <script>
-        tailwind.config = {
-            darkMode: 'media', // Use system preference for dark mode
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'Vazirmatn', 'sans-serif'],
-                        mono: ['SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
-                    },
-                }
-            }
-        }
-    </script>
-
-    <!-- Custom Font Links (Kept for aesthetic) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
-
-    <!-- Custom utility styles that Tailwind can't handle directly -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         /* Pulse animation for the Online dot */
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
         .status-dot.online { animation: pulse 2s infinite; }
-        
-        /* Sparkline minimal styling */
-        .sparkline-container svg { stroke: #3b82f6; /* Tailwind blue-500 */ stroke-width: 2; fill: none; }
-        
-        /* QR Modal visibility handled by JS */
         #qr-modal.visible { opacity: 1; visibility: visible; }
         #qr-modal { opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
-        
-        /* Pagination/hidden card handled by JS */
-        .proxy-card.hidden { display: none; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen font-sans">
     <div class="container max-w-3xl mx-auto px-4 py-8">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-extrabold mb-1">Telegram Proxy List</h1>
-            <p class="text-lg text-gray-500 dark:text-gray-400">Found <strong><?= $proxyCount ?></strong> unique proxies. Last updated: <?= date('Y-m-d H:i:s') ?> Tehran Time</p>
+            <p class="text-lg text-gray-500 dark:text-gray-400">Locally testing <strong><?= $proxyCount ?></strong> potential proxies from your device...</p>
         </header>
 
-        <?php if ($proxyCount > 0): ?>
-            <div class="controls-bar bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center justify-between mb-6 shadow-sm">
-                 <div class="items-per-page">
-                    <select id="items-per-page-select" class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-base">
-                        <option value="10">10 items per page</option>
-                        <option value="25">25 items per page</option>
-                        <option value="50">50 items per page</option>
-                        <option value="100">100 items per page</option>
-                    </select>
-                </div>
-                <div id="list-status" class="list-status text-gray-500 dark:text-gray-400 text-sm"></div>
-            </div>
+        <div class="controls-bar bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center justify-between mb-6 shadow-sm">
+            <button id="recheck-btn" class="px-4 py-2 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-wait">
+                <span id="recheck-btn-text">Check All Proxies</span>
+            </button>
+            <div id="list-status" class="list-status text-gray-500 dark:text-gray-400 text-sm">Initializing checks...</div>
+        </div>
 
-            <div class="proxy-list grid gap-5">
-                <?php foreach ($proxiesWithStatus as $proxy): ?>
+        <div id="proxy-list-container" class="grid gap-5">
+            <?php if ($proxyCount > 0): ?>
+                <?php foreach ($proxies as $proxy): ?>
                     <?php
                         $tgUrl = htmlspecialchars($proxy['tg_url']);
                         $server = htmlspecialchars($proxy['server']);
                         $port = htmlspecialchars($proxy['port']);
-                        $statusClass = strtolower($proxy['status']);
-                        
-                        $history = $proxy['history'] ?? [];
-                        $uptime = 0;
-                        $uptimeClass = 'text-red-500';
-                        if (!empty($history)) {
-                            $onlineCount = array_sum($history);
-                            $uptime = round(($onlineCount / count($history)) * 100);
-                            if ($uptime > 90) $uptimeClass = 'text-green-500';
-                            elseif ($uptime > 70) $uptimeClass = 'text-yellow-500';
-                        }
-                        $historyJson = htmlspecialchars(json_encode($history), ENT_QUOTES, 'UTF-8');
-
-                        // Tailwind Conditional Classes
-                        $cardBorder = ($statusClass === 'online') ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500 opacity-60';
-                        $badgeColors = ($statusClass === 'online') ? 
-                            'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
-                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-                        $dotColor = ($statusClass === 'online') ? 'bg-green-500' : 'bg-red-500';
                     ?>
-                    <div class="proxy-card bg-white dark:bg-gray-800 rounded-xl p-5 shadow-md border border-gray-200 dark:border-gray-700 flex flex-col gap-4 <?= $cardBorder ?> <?= $statusClass ?>">
+                    <div class="proxy-card bg-white dark:bg-gray-800 rounded-xl p-5 shadow-md border border-gray-200 dark:border-gray-700 flex flex-col gap-4 transition-opacity duration-300" 
+                         data-server="<?= $server ?>" data-port="<?= $port ?>" data-url="<?= $tgUrl ?>" data-latency="-1">
                         
-                        <div class="proxy-details flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                            <span class="status-badge inline-flex items-center space-x-1 px-3 py-1 font-medium rounded-full <?= $badgeColors ?>">
-                                <span class="status-dot w-2 h-2 rounded-full <?= $dotColor ?>"></span><?= $proxy['status'] ?>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                            <span class="status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                <span class="status-dot w-2 h-2 rounded-full bg-gray-400"></span>
+                                <span class="status-text">Checking...</span>
                             </span>
-                            <span class="proxy-info font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Server: <strong><?= $server ?></strong></span>
-                            <span class="proxy-info font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Port: <strong><?= $port ?></strong></span>
-                            <?php if ($proxy['status'] === 'Online'): ?>
-                                <span class="proxy-info font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Ping: <strong><?= $proxy['latency'] ?>ms</strong></span>
-                            <?php endif; ?>
+                            <span class="font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Server: <strong><?= $server ?></strong></span>
+                            <span class="font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Port: <strong><?= $port ?></strong></span>
+                            <span class="ping-details font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md hidden">Ping: <strong class="ping-text"></strong></span>
                         </div>
 
-                        <!-- Stability Sparkline Section -->
-                        <div class="proxy-stability flex items-center gap-2 text-sm pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <span class="w-[100px] h-[25px] sparkline-container" data-history="<?= $historyJson ?>"></span>
-                            <span class="uptime-text font-medium <?= $uptimeClass ?>"><?= $uptime ?>% Uptime</span>
-                        </div>
-                        <!-- End Stability Section -->
-
-                        <div class="proxy-actions flex gap-3 flex-wrap pt-2">
-                            <a href="<?= $tgUrl ?>" class="action-btn connect-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-green-600 hover:bg-green-700 transition-colors duration-200" target="_blank">
-                               <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-4 h-4" viewBox="0 0 16 16"><path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/></svg>
-                                <span>Connect</span>
+                        <div class="proxy-actions flex gap-3 flex-wrap pt-2 mt-auto">
+                            <a href="<?= $tgUrl ?>" class="action-btn connect-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-gray-400 cursor-not-allowed transition-colors duration-200" target="_blank">
+                                Connect
                             </a>
-                            <button class="action-btn copy-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-blue-600 hover:bg-blue-700 transition-colors duration-200" data-url="<?= $tgUrl ?>">
-                                <svg class="icon-copy w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/></svg>
-                                <svg class="icon-check w-4 h-4" style="display:none;" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
-                                <span>Copy</span>
-                            </button>
-                            <button class="action-btn qr-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-gray-500 hover:bg-gray-600 transition-colors duration-200" data-url="<?= $tgUrl ?>">
-                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 .5A.5.5 0 0 1 .5 0h3a.5.5 0 0 1 0 1H1v2.5a.5.5 0 0 1-1 0zM12 .5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0V1h-2.5a.5.5 0 0 1-.5-.5M.5 12a.5.5 0 0 1 .5.5V15h2.5a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1H15v-2.5a.5.5 0 0 1 .5-.5M4 4h1v1H4z"/><path d="M7 2H2v5h5zM3 3h3v3H3zm2 8.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m12-4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5M11 9h1v1h-1zM9 9h1v1H9zm4 4h1v1h-1zm-2 0h1v1h-1zm-2 0h1v1h-1zm4-2h1v1h-1zm-2 0h1v1h-1zm-2 0h1v1h-1zm2-2h1v1h-1zM9 11h1v1H9zm2-2H9v5h5V9h-2zM4 11h1v1H4zm-2 0h1v1H2zm-2 0h1v1H0z"/></svg>
-                                <span>Show QR</span>
-                            </button>
+                            <button class="action-btn copy-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-blue-600 hover:bg-blue-700 transition-colors duration-200">Copy</button>
+                            <button class="action-btn qr-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-gray-500 hover:bg-gray-600 transition-colors duration-200">Show QR</button>
                         </div>
                     </div>
                 <?php endforeach; ?>
-            </div>
-
-            <div class="pagination-controls flex justify-between items-center mt-6">
-                <button id="prev-btn" class="pagination-btn px-4 py-2 border border-blue-500 bg-white dark:bg-gray-800 text-blue-500 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
-                <button id="next-btn" class="pagination-btn px-4 py-2 border border-blue-500 bg-white dark:bg-gray-800 text-blue-500 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
-            </div>
-        <?php else: ?>
-            <p class="text-center p-10 text-xl text-gray-500 dark:text-gray-400">No proxies found in the latest scan.</p>
-        <?php endif; ?>
-
-        <div class="footer text-center mt-10 pt-6 text-sm text-gray-500 border-t border-gray-200 dark:border-gray-700">
-            <p class="mb-4">made with ❤️ by YEBEKHE</p>
-            <div class="social-icons flex justify-center items-center gap-6">
-                <a href="https://t.me/yebekhe" target="_blank" title="YEBEKHE on Telegram" class="text-gray-500 hover:text-blue-500 transition-colors duration-200">
-                    <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-1.39.2-1.61l16.11-5.71c.78-.27 1.45.16 1.18 1.1l-2.53 11.92c-.33 1.51-1.23 1.84-2.24 1.13l-4.75-3.51-2.35 2.24c-.26.26-.48.47-.93.47z"/></svg>
-                </a>
-                <a href="https://twitter.com/yebekhe" target="_blank" title="YEBEKHE on Twitter" class="text-gray-500 hover:text-blue-500 transition-colors duration-200">
-                    <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                </a>
-            </div>
+            <?php else: ?>
+                <p class="text-center p-10 text-xl text-gray-500 dark:text-gray-400 col-span-full">No potential proxies were found to check.</p>
+            <?php endif; ?>
         </div>
     </div>
     
-    <!-- QR Modal -->
     <div id="qr-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
-        <div class="modal-content bg-white dark:bg-gray-800 p-6 rounded-2xl text-center">
-            <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Scan with Telegram</h3>
-            <div id="qrcode-container" class="p-2 border border-gray-300 dark:border-gray-700 rounded-lg inline-block"></div>
-        </div>
+        <div class="modal-content bg-white dark:bg-gray-800 p-6 rounded-2xl text-center"><h3 class="text-xl font-semibold mb-4">Scan with Telegram</h3><div id="qrcode-container"></div></div>
     </div>
-    
-    <!-- JavaScript section remains largely the same, using existing selectors -->
+
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const proxyCards = Array.from(document.querySelectorAll(".proxy-card"));
-            if (proxyCards.length === 0) return;
-            const itemsPerPageSelect = document.getElementById("items-per-page-select");
-            const listStatus = document.getElementById("list-status");
-            const prevBtn = document.getElementById("prev-btn");
-            const nextBtn = document.getElementById("next-btn");
-            let currentPage = 1;
-            let itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
-            function renderList() {
-                const totalItems = proxyCards.length;
-                const totalPages = Math.ceil(totalItems / itemsPerPage);
-                currentPage = Math.max(1, Math.min(currentPage, totalPages));
-                proxyCards.forEach(card => card.classList.add("hidden"));
-                const start = (currentPage - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-                const paginatedCards = proxyCards.slice(start, end);
-                paginatedCards.forEach(card => card.classList.remove("hidden"));
-                const startItem = totalItems > 0 ? start + 1 : 0;
-                const endItem = Math.min(end, totalItems);
-                listStatus.textContent = `Showing ${startItem}-${endItem} of ${totalItems}`;
-                prevBtn.disabled = currentPage === 1;
-                nextBtn.disabled = currentPage === totalPages || totalItems === 0;
-            }
-            itemsPerPageSelect.addEventListener("change", () => {
-                itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
-                currentPage = 1;
-                renderList();
-            });
-            prevBtn.addEventListener("click", () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderList();
-                    // Scroll to the top of the container for better UX
-                    window.scrollTo({ top: document.querySelector(".container").offsetTop, behavior: "smooth" });
-                }
-            });
-            nextBtn.addEventListener("click", () => {
-                if (currentPage < Math.ceil(proxyCards.length / itemsPerPage)) {
-                    currentPage++;
-                    renderList();
-                    window.scrollTo({ top: document.querySelector(".container").offsetTop, behavior: "smooth" });
-                }
-            });
-            renderList();
-            const copyButtons = document.querySelectorAll(".copy-btn");
-            copyButtons.forEach(button => {
-                const iconCopy = button.querySelector(".icon-copy");
-                const iconCheck = button.querySelector(".icon-check");
-                const buttonText = button.querySelector("span");
-                const originalText = buttonText.textContent;
-                button.addEventListener("click", () => {
-                    const urlToCopy = button.getAttribute("data-url");
-                    navigator.clipboard.writeText(urlToCopy).then(() => {
-                        // Apply Tailwind success classes dynamically
-                        button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                        button.classList.add('bg-green-600', 'hover:bg-green-700');
-                        
-                        iconCopy.style.display = "none";
-                        iconCheck.style.display = "inline-block";
-                        buttonText.textContent = "Copied!";
-                        
-                        setTimeout(() => {
-                            // Revert to Tailwind primary classes
-                            button.classList.remove('bg-green-600', 'hover:bg-green-700');
-                            button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+    document.addEventListener("DOMContentLoaded", () => {
+        const proxyListContainer = document.getElementById("proxy-list-container");
+        const allProxyCards = Array.from(document.querySelectorAll(".proxy-card"));
+        const listStatus = document.getElementById("list-status");
+        const recheckBtn = document.getElementById("recheck-btn");
+        const recheckBtnText = document.getElementById("recheck-btn-text");
+        const CHECK_TIMEOUT = 5000; // 5 seconds to wait for a proxy to respond
+        const CONCURRENT_CHECKS = 10; // Number of proxies to check at once
 
-                            iconCopy.style.display = "inline-block";
-                            iconCheck.style.display = "none";
-                            buttonText.textContent = originalText;
-                        }, 2000);
-                    });
-                });
-            });
-            const qrModal = document.getElementById("qr-modal");
-            const qrContainer = document.getElementById("qrcode-container");
-            document.querySelectorAll(".qr-btn").forEach(button => {
-                button.addEventListener("click", () => {
-                    const url = button.getAttribute("data-url");
-                    qrContainer.innerHTML = "";
-                    // Note: QRCode library uses fixed white background, which is fine for QR codes.
-                    new QRCode(qrContainer, { text: url, width: 220, height: 220 });
-                    qrModal.classList.add("visible");
-                });
-            });
-            qrModal.addEventListener("click", e => { if (e.target === qrModal || e.target.closest('.modal-content') === null) qrModal.classList.remove("visible"); });
+        /**
+         * Checks a single proxy's status and latency from the browser.
+         * Returns a promise that resolves with { status: 'Online'|'Offline', latency: number|null }
+         */
+        function checkProxy(server, port) {
+            return new Promise(resolve => {
+                const startTime = performance.now();
+                const socket = new WebSocket(`wss://${server}:${port}`); // Using wss for broader firewall compatibility
+                let timer;
 
-            /* Sparkline Generation Logic (Unchanged, as it deals with SVG drawing) */
-            function createSparkline(history) {
-                if (!history || history.length < 2) return null;
-                const svgNS = "http://www.w3.org/2000/svg";
-                const svg = document.createElementNS(svgNS, "svg");
-                const width = 100;
-                const height = 25;
-                const padding = 4;
-                svg.setAttribute("width", width);
-                svg.setAttribute("height", height);
-                svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-                const polyline = document.createElementNS(svgNS, "polyline");
-                let points = "";
-                const xStep = width / (history.length - 1);
-                history.forEach((status, i) => {
-                    const x = i * xStep;
-                    const y = status === 1 ? padding : height - padding;
-                    points += `${x},${y} `;
-                });
-                polyline.setAttribute("points", points.trim());
-                svg.appendChild(polyline);
-                return svg;
-            }
+                socket.onopen = () => {
+                    clearTimeout(timer);
+                    socket.close();
+                    resolve({ status: 'Online', latency: Math.round(performance.now() - startTime) });
+                };
 
-            document.querySelectorAll(".sparkline-container").forEach(container => {
-                try {
-                    const history = JSON.parse(container.getAttribute("data-history"));
-                    const sparklineSvg = createSparkline(history);
-                    if (sparklineSvg) {
-                        container.appendChild(sparklineSvg);
+                socket.onerror = () => {
+                    clearTimeout(timer);
+                    // A quick error often means the port is open but doesn't speak WebSocket, which is expected for MTProto.
+                    // This is our primary success condition.
+                    resolve({ status: 'Online', latency: Math.round(performance.now() - startTime) });
+                };
+
+                timer = setTimeout(() => {
+                    // If the connection is still trying to open after the timeout, it's offline.
+                    if (socket.readyState === WebSocket.CONNECTING) {
+                        socket.close();
+                        resolve({ status: 'Offline', latency: null });
                     }
-                } catch (e) {
-                    console.error("Could not parse sparkline history:", e);
-                }
+                }, CHECK_TIMEOUT);
             });
+        }
+
+        /**
+         * Updates the UI of a single proxy card based on check results.
+         */
+        function updateCardUI(card, result) {
+            const statusBadge = card.querySelector('.status-badge');
+            const statusDot = card.querySelector('.status-dot');
+            const statusText = card.querySelector('.status-text');
+            const pingDetails = card.querySelector('.ping-details');
+            const pingText = card.querySelector('.ping-text');
+            const connectBtn = card.querySelector('.connect-btn');
+
+            card.dataset.latency = result.latency ?? '99999'; // Use a high number for sorting offline proxies
+
+            if (result.status === 'Online') {
+                statusBadge.className = 'status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+                statusDot.className = 'status-dot w-2 h-2 rounded-full bg-green-500 online';
+                statusText.textContent = 'Online';
+                pingText.textContent = `${result.latency}ms`;
+                pingDetails.classList.remove('hidden');
+                connectBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                connectBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            } else {
+                statusBadge.className = 'status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+                statusDot.className = 'status-dot w-2 h-2 rounded-full bg-red-500';
+                statusText.textContent = 'Offline';
+                pingDetails.classList.add('hidden');
+                card.classList.add('opacity-50');
+            }
+        }
+        
+        /**
+         * Resets the UI of all cards to the "Checking..." state.
+         */
+        function resetAllCards() {
+            allProxyCards.forEach(card => {
+                const statusBadge = card.querySelector('.status-badge');
+                const statusDot = card.querySelector('.status-dot');
+                const statusText = card.querySelector('.status-text');
+                const pingDetails = card.querySelector('.ping-details');
+                const connectBtn = card.querySelector('.connect-btn');
+                
+                card.dataset.latency = '-1';
+                card.classList.remove('opacity-50');
+                statusBadge.className = 'status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
+                statusDot.className = 'status-dot w-2 h-2 rounded-full bg-gray-400';
+                statusDot.classList.remove('online');
+                statusText.textContent = 'Checking...';
+                pingDetails.classList.add('hidden');
+                connectBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                connectBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            });
+        }
+
+
+        /**
+         * Sorts the proxy cards in the DOM based on their latency.
+         */
+        function sortCards() {
+            const sortedCards = [...allProxyCards].sort((a, b) => {
+                const latencyA = parseInt(a.dataset.latency, 10);
+                const latencyB = parseInt(b.dataset.latency, 10);
+                return latencyA - latencyB;
+            });
+
+            // Re-append cards to the container in the new sorted order
+            sortedCards.forEach(card => proxyListContainer.appendChild(card));
+        }
+
+        /**
+         * Main function to run all checks.
+         */
+        async function runAllChecks() {
+            recheckBtn.disabled = true;
+            recheckBtnText.textContent = "Checking...";
+            resetAllCards();
+
+            let checkedCount = 0;
+            let onlineCount = 0;
+
+            for (let i = 0; i < allProxyCards.length; i += CONCURRENT_CHECKS) {
+                const batch = allProxyCards.slice(i, i + CONCURRENT_CHECKS);
+                const promises = batch.map(card => 
+                    checkProxy(card.dataset.server, card.dataset.port).then(result => {
+                        updateCardUI(card, result);
+                        checkedCount++;
+                        if (result.status === 'Online') onlineCount++;
+                        listStatus.textContent = `Checked ${checkedCount} of ${allProxyCards.length} | Online: ${onlineCount}`;
+                    })
+                );
+                await Promise.all(promises);
+            }
+
+            listStatus.textContent = `Finished. Found ${onlineCount} online proxies. Sorting best results to top...`;
+            sortCards();
+            listStatus.textContent = `Finished. ${onlineCount} online proxies found.`;
+            recheckBtn.disabled = false;
+            recheckBtnText.textContent = "Re-Check Proxies";
+        }
+
+        // --- Event Listeners and Initial Run ---
+        recheckBtn.addEventListener('click', runAllChecks);
+        
+        // Button/Modal logic
+        proxyListContainer.addEventListener('click', (e) => {
+            const copyBtn = e.target.closest('.copy-btn');
+            if(copyBtn) {
+                navigator.clipboard.writeText(copyBtn.closest('.proxy-card').dataset.url);
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = 'Copied!';
+                copyBtn.classList.add('bg-green-500');
+                setTimeout(() => { 
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.remove('bg-green-500');
+                }, 1500);
+            }
+
+            const qrBtn = e.target.closest('.qr-btn');
+            if(qrBtn) {
+                const qrModal = document.getElementById('qr-modal');
+                const qrContainer = document.getElementById('qrcode-container');
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, { text: qrBtn.closest('.proxy-card').dataset.url, width: 220, height: 220 });
+                qrModal.classList.add('visible');
+            }
         });
+
+        const qrModal = document.getElementById('qr-modal');
+        qrModal.addEventListener('click', () => qrModal.classList.remove('visible'));
+
+        // Automatically start checking on page load
+        runAllChecks();
+    });
     </script>
 </body>
 </html>
