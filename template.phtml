@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
-        /* Pulse animation for the Online dot */
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
         .status-dot.online { animation: pulse 2s infinite; }
         #qr-modal.visible { opacity: 1; visibility: visible; }
@@ -18,49 +17,49 @@
     <div class="container max-w-3xl mx-auto px-4 py-8">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-extrabold mb-1">Telegram Proxy List</h1>
-            <p class="text-lg text-gray-500 dark:text-gray-400">Locally testing <strong><?= $proxyCount ?></strong> potential proxies from your device...</p>
+            <p class="text-lg text-gray-500 dark:text-gray-400">Showing <strong><?= $proxyCount ?></strong> proxies with initial status from server.</p>
         </header>
 
         <div class="controls-bar bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center justify-between mb-6 shadow-sm">
-            <button id="recheck-btn" class="px-4 py-2 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-wait">
-                <span id="recheck-btn-text">Check All Proxies</span>
+            <button id="recheck-btn" class="px-5 py-2.5 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center gap-2">
+                <svg id="recheck-icon-play" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                <svg id="recheck-icon-loading" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span id="recheck-btn-text">Check My Latency</span>
             </button>
-            <div id="list-status" class="list-status text-gray-500 dark:text-gray-400 text-sm">Initializing checks...</div>
+            <div id="list-status" class="list-status text-gray-500 dark:text-gray-400 text-sm">Click the button to test latency from your device.</div>
         </div>
 
         <div id="proxy-list-container" class="grid gap-5">
-            <?php if ($proxyCount > 0): ?>
-                <?php foreach ($proxies as $proxy): ?>
-                    <?php
-                        $tgUrl = htmlspecialchars($proxy['tg_url']);
-                        $server = htmlspecialchars($proxy['server']);
-                        $port = htmlspecialchars($proxy['port']);
-                    ?>
-                    <div class="proxy-card bg-white dark:bg-gray-800 rounded-xl p-5 shadow-md border border-gray-200 dark:border-gray-700 flex flex-col gap-4 transition-opacity duration-300" 
-                         data-server="<?= $server ?>" data-port="<?= $port ?>" data-url="<?= $tgUrl ?>" data-latency="-1">
-                        
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                            <span class="status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                                <span class="status-dot w-2 h-2 rounded-full bg-gray-400"></span>
-                                <span class="status-text">Checking...</span>
-                            </span>
-                            <span class="font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Server: <strong><?= $server ?></strong></span>
-                            <span class="font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Port: <strong><?= $port ?></strong></span>
-                            <span class="ping-details font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md hidden">Ping: <strong class="ping-text"></strong></span>
-                        </div>
-
-                        <div class="proxy-actions flex gap-3 flex-wrap pt-2 mt-auto">
-                            <a href="<?= $tgUrl ?>" class="action-btn connect-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-gray-400 cursor-not-allowed transition-colors duration-200" target="_blank">
-                                Connect
-                            </a>
-                            <button class="action-btn copy-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-blue-600 hover:bg-blue-700 transition-colors duration-200">Copy</button>
-                            <button class="action-btn qr-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-gray-500 hover:bg-gray-600 transition-colors duration-200">Show QR</button>
-                        </div>
+            <?php foreach ($proxies as $proxy): ?>
+                <?php
+                    $tgUrl = htmlspecialchars($proxy['tg_url']);
+                    $server = htmlspecialchars($proxy['server']);
+                    $port = htmlspecialchars($proxy['port']);
+                    $isOnline = $proxy['status'] === 'Online';
+                ?>
+                <div class="proxy-card bg-white dark:bg-gray-800 rounded-xl p-5 shadow-md border dark:border-gray-700 flex flex-col gap-4 <?= !$isOnline ? 'opacity-50' : '' ?> <?= $isOnline ? 'is-online border-gray-200' : 'border-transparent' ?>" 
+                     data-server="<?= $server ?>" data-port="<?= $port ?>" data-url="<?= $tgUrl ?>" data-latency="<?= $proxy['latency'] ?? '99999' ?>">
+                    
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                        <span class="status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full <?= $isOnline ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' ?>">
+                            <span class="status-dot w-2 h-2 rounded-full <?= $isOnline ? 'bg-green-500 online' : 'bg-red-500' ?>"></span>
+                            <span class="status-text"><?= $proxy['status'] ?></span>
+                        </span>
+                        <span class="font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Server: <strong><?= $server ?></strong></span>
+                        <span class="font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md break-all">Port: <strong><?= $port ?></strong></span>
+                        <span class="ping-details font-mono bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-md <?= !$isOnline ? 'hidden' : '' ?>">
+                            Ping: <strong class="ping-text"><?= $isOnline ? $proxy['latency'].'ms' : '' ?></strong>
+                            <span class="ping-source-text text-xs text-gray-400">(server)</span>
+                        </span>
                     </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="text-center p-10 text-xl text-gray-500 dark:text-gray-400 col-span-full">No potential proxies were found to check.</p>
-            <?php endif; ?>
+
+                    <div class="proxy-actions flex gap-3 flex-wrap pt-2 mt-auto">
+                        <a href="<?= $tgUrl ?>" class="action-btn connect-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium <?= $isOnline ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed' ?> transition-colors" target="_blank">Connect</a>
+                        <button class="action-btn copy-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-blue-600 hover:bg-blue-700 transition-colors">Copy</button>
+                        <button class="action-btn qr-btn flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium bg-gray-500 hover:bg-gray-600 transition-colors">Show QR</button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
     
@@ -71,162 +70,106 @@
     <script>
     document.addEventListener("DOMContentLoaded", () => {
         const proxyListContainer = document.getElementById("proxy-list-container");
-        const allProxyCards = Array.from(document.querySelectorAll(".proxy-card"));
         const listStatus = document.getElementById("list-status");
         const recheckBtn = document.getElementById("recheck-btn");
         const recheckBtnText = document.getElementById("recheck-btn-text");
-        const CHECK_TIMEOUT = 5000; // 5 seconds to wait for a proxy to respond
-        const CONCURRENT_CHECKS = 10; // Number of proxies to check at once
+        const recheckIconPlay = document.getElementById('recheck-icon-play');
+        const recheckIconLoading = document.getElementById('recheck-icon-loading');
+        const CLIENT_CHECK_TIMEOUT = 3000; // 3 seconds for local check
 
         /**
-         * Checks a single proxy's status and latency from the browser.
-         * Returns a promise that resolves with { status: 'Online'|'Offline', latency: number|null }
+         * Checks latency using a more reliable fetch 'no-cors' method.
          */
-        function checkProxy(server, port) {
+        function checkProxyLatency(server, port) {
             return new Promise(resolve => {
+                const controller = new AbortController();
+                const signal = controller.signal;
                 const startTime = performance.now();
-                const socket = new WebSocket(`wss://${server}:${port}`); // Using wss for broader firewall compatibility
-                let timer;
+                
+                const timer = setTimeout(() => {
+                    controller.abort();
+                    resolve(null); // Timeout
+                }, CLIENT_CHECK_TIMEOUT);
 
-                socket.onopen = () => {
-                    clearTimeout(timer);
-                    socket.close();
-                    resolve({ status: 'Online', latency: Math.round(performance.now() - startTime) });
-                };
-
-                socket.onerror = () => {
-                    clearTimeout(timer);
-                    // A quick error often means the port is open but doesn't speak WebSocket, which is expected for MTProto.
-                    // This is our primary success condition.
-                    resolve({ status: 'Online', latency: Math.round(performance.now() - startTime) });
-                };
-
-                timer = setTimeout(() => {
-                    // If the connection is still trying to open after the timeout, it's offline.
-                    if (socket.readyState === WebSocket.CONNECTING) {
-                        socket.close();
-                        resolve({ status: 'Offline', latency: null });
-                    }
-                }, CHECK_TIMEOUT);
+                // We expect this to fail, but the time it takes to fail tells us the latency.
+                fetch(`http://${server}:${port}`, { mode: 'no-cors', signal, cache: 'no-store' })
+                    .then(() => resolve(performance.now() - startTime))
+                    .catch(() => resolve(performance.now() - startTime))
+                    .finally(() => clearTimeout(timer));
             });
-        }
-
-        /**
-         * Updates the UI of a single proxy card based on check results.
-         */
-        function updateCardUI(card, result) {
-            const statusBadge = card.querySelector('.status-badge');
-            const statusDot = card.querySelector('.status-dot');
-            const statusText = card.querySelector('.status-text');
-            const pingDetails = card.querySelector('.ping-details');
-            const pingText = card.querySelector('.ping-text');
-            const connectBtn = card.querySelector('.connect-btn');
-
-            card.dataset.latency = result.latency ?? '99999'; // Use a high number for sorting offline proxies
-
-            if (result.status === 'Online') {
-                statusBadge.className = 'status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-                statusDot.className = 'status-dot w-2 h-2 rounded-full bg-green-500 online';
-                statusText.textContent = 'Online';
-                pingText.textContent = `${result.latency}ms`;
-                pingDetails.classList.remove('hidden');
-                connectBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                connectBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-            } else {
-                statusBadge.className = 'status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-                statusDot.className = 'status-dot w-2 h-2 rounded-full bg-red-500';
-                statusText.textContent = 'Offline';
-                pingDetails.classList.add('hidden');
-                card.classList.add('opacity-50');
-            }
         }
         
         /**
-         * Resets the UI of all cards to the "Checking..." state.
+         * Updates a card with the new client-side latency.
          */
-        function resetAllCards() {
-            allProxyCards.forEach(card => {
-                const statusBadge = card.querySelector('.status-badge');
-                const statusDot = card.querySelector('.status-dot');
-                const statusText = card.querySelector('.status-text');
-                const pingDetails = card.querySelector('.ping-details');
-                const connectBtn = card.querySelector('.connect-btn');
-                
-                card.dataset.latency = '-1';
-                card.classList.remove('opacity-50');
-                statusBadge.className = 'status-badge inline-flex items-center space-x-2 px-3 py-1 font-medium rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
-                statusDot.className = 'status-dot w-2 h-2 rounded-full bg-gray-400';
-                statusDot.classList.remove('online');
-                statusText.textContent = 'Checking...';
-                pingDetails.classList.add('hidden');
-                connectBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                connectBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            });
+        function updateCardLatency(card, latency) {
+            const pingDetails = card.querySelector('.ping-details');
+            const pingText = card.querySelector('.ping-text');
+            const pingSourceText = card.querySelector('.ping-source-text');
+            
+            card.dataset.latency = latency;
+            pingText.textContent = `${Math.round(latency)}ms`;
+            pingSourceText.textContent = '(local)';
+            pingSourceText.classList.add('text-blue-500', 'font-semibold');
         }
 
-
         /**
-         * Sorts the proxy cards in the DOM based on their latency.
+         * Sorts cards in the DOM by their data-latency attribute.
          */
         function sortCards() {
-            const sortedCards = [...allProxyCards].sort((a, b) => {
+            const cards = Array.from(proxyListContainer.querySelectorAll(".proxy-card"));
+            cards.sort((a, b) => {
                 const latencyA = parseInt(a.dataset.latency, 10);
                 const latencyB = parseInt(b.dataset.latency, 10);
                 return latencyA - latencyB;
             });
-
-            // Re-append cards to the container in the new sorted order
-            sortedCards.forEach(card => proxyListContainer.appendChild(card));
+            cards.forEach(card => proxyListContainer.appendChild(card));
         }
 
-        /**
-         * Main function to run all checks.
-         */
-        async function runAllChecks() {
+        async function runAllClientChecks() {
             recheckBtn.disabled = true;
             recheckBtnText.textContent = "Checking...";
-            resetAllCards();
+            recheckIconPlay.classList.add('hidden');
+            recheckIconLoading.classList.remove('hidden');
 
+            const onlineCards = Array.from(document.querySelectorAll('.proxy-card.is-online'));
             let checkedCount = 0;
-            let onlineCount = 0;
 
-            for (let i = 0; i < allProxyCards.length; i += CONCURRENT_CHECKS) {
-                const batch = allProxyCards.slice(i, i + CONCURRENT_CHECKS);
-                const promises = batch.map(card => 
-                    checkProxy(card.dataset.server, card.dataset.port).then(result => {
-                        updateCardUI(card, result);
-                        checkedCount++;
-                        if (result.status === 'Online') onlineCount++;
-                        listStatus.textContent = `Checked ${checkedCount} of ${allProxyCards.length} | Online: ${onlineCount}`;
-                    })
-                );
-                await Promise.all(promises);
-            }
+            const promises = onlineCards.map(async (card) => {
+                const latency = await checkProxyLatency(card.dataset.server, card.dataset.port);
+                if (latency !== null) {
+                    updateCardLatency(card, latency);
+                }
+                checkedCount++;
+                listStatus.textContent = `Testing local latency... ${checkedCount} of ${onlineCards.length}`;
+            });
 
-            listStatus.textContent = `Finished. Found ${onlineCount} online proxies. Sorting best results to top...`;
+            await Promise.all(promises);
+
+            listStatus.textContent = "Finished. Sorting by your local latency.";
             sortCards();
-            listStatus.textContent = `Finished. ${onlineCount} online proxies found.`;
+            listStatus.textContent = `Finished. Best proxies for you are now at the top.`;
             recheckBtn.disabled = false;
-            recheckBtnText.textContent = "Re-Check Proxies";
+            recheckBtnText.textContent = "Re-Check My Latency";
+            recheckIconPlay.classList.remove('hidden');
+            recheckIconLoading.classList.add('hidden');
         }
 
-        // --- Event Listeners and Initial Run ---
-        recheckBtn.addEventListener('click', runAllChecks);
-        
-        // Button/Modal logic
+        recheckBtn.addEventListener('click', runAllClientChecks);
+
+        // Standard event listeners for Copy/QR
         proxyListContainer.addEventListener('click', (e) => {
             const copyBtn = e.target.closest('.copy-btn');
             if(copyBtn) {
                 navigator.clipboard.writeText(copyBtn.closest('.proxy-card').dataset.url);
-                const originalText = copyBtn.innerHTML;
-                copyBtn.innerHTML = 'Copied!';
-                copyBtn.classList.add('bg-green-500');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.add('!bg-green-500');
                 setTimeout(() => { 
-                    copyBtn.innerHTML = originalText;
-                    copyBtn.classList.remove('bg-green-500');
+                    copyBtn.textContent = originalText;
+                    copyBtn.classList.remove('!bg-green-500');
                 }, 1500);
             }
-
             const qrBtn = e.target.closest('.qr-btn');
             if(qrBtn) {
                 const qrModal = document.getElementById('qr-modal');
@@ -236,12 +179,9 @@
                 qrModal.classList.add('visible');
             }
         });
-
-        const qrModal = document.getElementById('qr-modal');
-        qrModal.addEventListener('click', () => qrModal.classList.remove('visible'));
-
-        // Automatically start checking on page load
-        runAllChecks();
+        document.getElementById('qr-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'qr-modal') e.target.classList.remove('visible');
+        });
     });
     </script>
 </body>
